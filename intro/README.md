@@ -6,7 +6,7 @@
 > django-admin startproject mysite
 
 # 앱생성
-> cd mysite \
+> cd mysite 
 > python manage.py startapp polls
 
 # polls/views.py view추가
@@ -24,10 +24,10 @@ def index(request):
 # polls/urls.py 생성
 ```python
 # polls/urls.py
-from django.urls import path  \
+from django.urls import path  
 from . import views  
-urlpatterns = [   \
-    path('', views.index,  name='index'), \
+urlpatterns = [   
+    path('', views.index,  name='index'), 
 ]
 ```
 
@@ -219,4 +219,115 @@ from django.contrib import admin
 # Register your models here.
 from .models import Question
 admin.site.register(Question)
+```
+
+
+ # Part 3: 모델과 관리자 페이지
+> [Part 3: 모델과 관리자 페이지](https://docs.djangoproject.com/ko/3.0/intro/tutorial03/ "Part 2: 모델과 관리자 페이지")
+
+# 뷰 추가하기
+```python
+# polls/views.py
+def detail(request, question_id):
+    return HttpResponse("You're looking at question %s." % question_id)
+
+def results(request, question_id):
+    response = "You're looking at the results of question %s."
+    return HttpResponse(response % question_id)
+
+def vote(request, question_id):
+    return HttpResponse("You're voting on question %s." % question_id)
+```
+
+# 뷰 urlpattern추가
+```python
+# polls/urls.py
+from django.urls import path
+
+from . import views
+
+# namespace (여러개의 앱이 있을경우 app_name으로 구분함)
+app_name = 'polls'
+
+urlpatterns = [
+    # ex: /polls/
+    path('', views.index, name='index'),
+    # ex: /polls/5/
+    path('<int:question_id>/', views.detail, name='detail'),
+    # ex: /polls/5/results/
+    path('<int:question_id>/results/', views.results, name='results'),
+    # ex: /polls/5/vote/
+    path('<int:question_id>/vote/', views.vote, name='vote'),
+]
+
+```
+
+화면호출  
+[http://127.0.0.1:8000/polls/](http://127.0.0.1:8000/polls/)
+```html
+Mmmmmm...., What's up??
+```
+
+# 뷰 템블릿
+```python
+# polls/views.py
+from django.template import loader
+from django.http import HttpResponse
+def index(request):   
+    # Question._order.pub_date
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    template = loader.get_template('polls/index.html')
+    context = {
+        'latest_question_list' : latest_question_list,
+    }
+    return HttpResponse(template.render(context, request))  
+
+or 
+# import 및 사용방법이 간결해진다.
+from django.shortcuts import render
+def index(request):   
+    # Question._order.pub_date
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    template = loader.get_template('polls/index.html')
+    context = {
+        'latest_question_list' : latest_question_list,
+    }
+    return render(request, 'polls/index.html', context)
+```
+
+```python
+# mysite/settings.py
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            # mysite/temlates
+            os.path.join(BASE_DIR, 'templates'),  
+        ],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+```
+
+```html
+<!-- 
+  templates/polls/index.html 
+-->
+{% if latest_question_list %}
+    <ul>
+    {% for question in latest_question_list %}
+        <li><a href="/polls/{{ question.id }}/">{{ question.question_text }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No polls are available.</p>
+{% endif %}
 ```
