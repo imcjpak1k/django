@@ -195,7 +195,7 @@ Running migrations:
 > python manage.py createsuperuser
 > 
 
-```
+```bash
 (twoscoopsofdjango) c:\Users\imcjp\workspace\vscode\django\intro\mysite>python manage.py createsuperuser
 Username (leave blank to use 'imcjp'): admin
 Email address: admin@xx.com
@@ -222,12 +222,18 @@ admin.site.register(Question)
 ```
 
 
- # Part 3: 모델과 관리자 페이지
-> [Part 3: 모델과 관리자 페이지](https://docs.djangoproject.com/ko/3.0/intro/tutorial03/ "Part 2: 모델과 관리자 페이지")
+ # Part 3: 뷰와 템플릿
+> [Part 3: 뷰와 템플릿](https://docs.djangoproject.com/ko/3.0/intro/tutorial03/ "Part 3: 뷰와 템플릿")
 
 # 뷰 추가하기
 ```python
 # polls/views.py
+
+def index(request):   
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    output = ', '.join([q.question_text for q in latest_question_list])
+    return HttpResponse(output)  
+
 def detail(request, question_id):
     return HttpResponse("You're looking at question %s." % question_id)
 
@@ -239,7 +245,8 @@ def vote(request, question_id):
     return HttpResponse("You're voting on question %s." % question_id)
 ```
 
-# 뷰 urlpattern추가
+
+# urlpattern추가
 ```python
 # polls/urls.py
 from django.urls import path
@@ -262,13 +269,12 @@ urlpatterns = [
 
 ```
 
-화면호출  
 [http://127.0.0.1:8000/polls/](http://127.0.0.1:8000/polls/)
 ```html
 Mmmmmm...., What's up??
 ```
 
-# 뷰 템블릿
+# template, loader, lender
 ```python
 # polls/views.py
 from django.template import loader
@@ -283,6 +289,7 @@ def index(request):
     return HttpResponse(template.render(context, request))  
 
 or 
+
 # import 및 사용방법이 간결해진다.
 from django.shortcuts import render
 def index(request):   
@@ -331,3 +338,91 @@ TEMPLATES = [
     <p>No polls are available.</p>
 {% endif %}
 ```
+
+# 템플릿 시스템 사용하기
+question의 질문 및 답변상세조회
+choice_set함수로 질문의 답변목록을 가져오는 역할을 하는 것으로,
+model에서 ForeignKey를 설정하면 생성되는 함수인듯 함....
+(question의 pk로 choice데이터를 조회 후 반환)
+```html
+<!-- polls/templates/polls/detail.html -->
+<ul>
+<!-- 질문내용 -->
+<h1>{{ question.question_text }}</h1>
+<!-- 답변내용 -->
+{% for choice in question.choice_set.all %}
+    <li>{{ choice.choice_text }}</li>
+{% endfor %}
+</ul>
+```
+
+# 템플릿에서 하드코딩된 URL 제거하기
+polls/urls.py 파일에 정의되어 있는 'detail'의 url 정보를 가져다 출력하므로
+url정보를 변경하고자 하는 경우에는 urls.py의 path정보만 수정한다.
+```html
+<!-- 
+  templates/polls/index.html 
+-->
+{% if latest_question_list %}
+    <ul>
+    {% for question in latest_question_list %}
+        <!-- 
+            path('<int:question_id>/', views.detail, name='detail'),
+         -->
+        <li><a href="{% url 'detail' question.id %}">{{ question.question_text }}</a></li>
+        
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No polls are available.</p>
+{% endif %}
+```
+
+# url namespace(app_name)
+namespace를 설정은 urls.py파일에 'app_name'으로 입력하면 된다.
+단, 해당 url을 사용하는 화면(html)이 있으면 url에 namespace를 추가 입력하도록 한다.
+즉, namespace를 추가 및 수정하게 된다면 노가다를 해야한다는 이야기이므로 namespace는 신중한게 입력하도록 하자.
+
+```python
+# polls/urls.py
+# namespace
+app_name = 'polls'
+```
+
+```html
+<!-- 
+  templates/polls/index.html 
+-->
+{% if latest_question_list %}
+    <ul>
+    {% for question in latest_question_list %}
+    <!--
+        namespace추가
+        'detail' ==>> 'polls:detail'
+    -->
+        <li><a href="{% url 'polls:detail' question.id %}">{{ question.question_text }}</a></li>
+        
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No polls are available.</p>
+{% endif %}
+```
+
+
+
+
+ # Part 4: 폼과 기본 뷰
+> [Part 4: 폼과 기본 뷰](https://docs.djangoproject.com/ko/3.0/intro/tutorial03/ "Part 4: 폼과 기본 뷰")
+
+ 
+ # Part 5: 테스팅
+> [Part 5: 테스팅](https://docs.djangoproject.com/ko/3.0/intro/tutorial03/ "Part 5: 테스팅")
+
+
+ # Part 6: 정적 파일
+> [Part 6: 정적 파일](https://docs.djangoproject.com/ko/3.0/intro/tutorial03/ "Part 6: 정적 파일")
+
+ # Part 7: 관리자 페이지 커스터마이징
+> [Part 7: 관리자 페이지 커스터마이징](https://docs.djangoproject.com/ko/3.0/intro/tutorial03/ "Part 7: 관리자 페이지 커스터마이징")
+
