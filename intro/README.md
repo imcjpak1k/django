@@ -254,7 +254,7 @@ from django.urls import path
 from . import views
 
 # namespace (여러개의 앱이 있을경우 app_name으로 구분함)
-app_name = 'polls'
+# app_name = 'polls'
 
 urlpatterns = [
     # ex: /polls/
@@ -341,8 +341,8 @@ TEMPLATES = [
 
 # 템플릿 시스템 사용하기
 question의 질문 및 답변상세조회
-choice_set함수로 질문의 답변목록을 가져오는 역할을 하는 것으로,
-model에서 ForeignKey를 설정하면 생성되는 함수인듯 함....
+ - choice_set함수은 질문의 답변목록을 가져오는 역할을 하는 것으로, model에서 ForeignKey를 설정하면 생성되는 함수인듯 함....
+
 (question의 pk로 choice데이터를 조회 후 반환)
 ```html
 <!-- polls/templates/polls/detail.html -->
@@ -357,8 +357,7 @@ model에서 ForeignKey를 설정하면 생성되는 함수인듯 함....
 ```
 
 # 템플릿에서 하드코딩된 URL 제거하기
-polls/urls.py 파일에 정의되어 있는 'detail'의 url 정보를 가져다 출력하므로
-url정보를 변경하고자 하는 경우에는 urls.py의 path정보만 수정한다.
+polls/urls.py 파일에 정의되어 있는 'detail'의 url 정보를 가져다 출력하므로 url정보를 변경하고자 하는 경우에는 urls.py의 path정보만 수정한다.
 ```html
 <!-- 
   templates/polls/index.html 
@@ -379,12 +378,13 @@ url정보를 변경하고자 하는 경우에는 urls.py의 path정보만 수정
 ```
 
 # url namespace(app_name)
-namespace를 설정은 urls.py파일에 'app_name'으로 입력하면 된다.
-단, 해당 url을 사용하는 화면(html)이 있으면 url에 namespace를 추가 입력하도록 한다.
-즉, namespace를 추가 및 수정하게 된다면 노가다를 해야한다는 이야기이므로 namespace는 신중한게 입력하도록 하자.
+- namespace(app_name)설정은 여러 app이 있을때 충돌을 방지해주는 역할을 하며, 설정은 아래와 같이 진행한다.
+- 해당 url을 사용하는 화면(html)이 있으면 url에 namespace를 추가 입력하도록 한다.
+- 즉, namespace를 추가 및 수정하게 된다면 노가다를 해야한다는 이야기이므로 namespace는 신중한게 입력하도록 하자.
 
 ```python
 # polls/urls.py
+
 # namespace
 app_name = 'polls'
 ```
