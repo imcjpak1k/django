@@ -532,6 +532,46 @@ def results(request, question_id):
 이 문제를 해결할 수 있는 방법을 알아보려면 [Avoiding race conditions using F()](https://docs.djangoproject.com/ko/3.0/ref/models/expressions/#avoiding-race-conditions-using-f, "Avoiding race conditions using F()") 를 참고하세요
 
 ## 제네릭 뷰 사용하기
+### URLconf 수정
+<question_id> 에서 <pk> 로 변경 
+
+```python
+# polls/urls.py
+urlpatterns = [
+    # ex: /polls/
+    path('', views.IndexView.as_view(), name='index'),
+    # ex: /polls/5/
+    path('<int:pk>/', views.DetailView.as_view(), name='detail'),
+    # ex: /polls/5/results/
+    path('<int:pk>/results/', views.ResultsView.as_view(), name='results'),
+    ..... 
+]
+```
+
+### views 수정
+수정된 내용에는 pk로 모델을 조회하는 로직이 없다.   
+URLconf에 제네릭 뷰를 설정할 때 question_id를 pk로 변경하였으며, pk는 제네릭 뷰에서 모델을 조회하나 보다...
+```python
+# polls/views.py
+from django.views import generic
+
+class IndexView(generic.ListView):
+    template_name = 'polls/index.html'
+    context_object_name = 'latest_question_list'
+
+    def get_queryset(self):
+        """Return the last five published questions."""
+        return Question.objects.order_by('-pub_date')[:5]
+
+class DetailView(generic.DetailView):
+    model = Question
+    template_name = 'polls/detail.html'
+
+class ResultsView(generic.DetailView):
+    model = Question
+    template_name = 'polls/results.html'
+```
+
 
  # Part 5: 테스팅
 > [Part 5: 테스팅](https://docs.djangoproject.com/ko/3.0/intro/tutorial05/ "Part 5: 테스팅")
