@@ -529,7 +529,34 @@ def results(request, question_id):
 > 홍길동 조회시 투표횟수 22회   -> 저장 -> 23회   
 > 강감찬 조회시 투표횟수 22회   -> 저장 -> 24회   
 
-이 문제를 해결할 수 있는 방법을 알아보려면 [Avoiding race conditions using F()](https://docs.djangoproject.com/ko/3.0/ref/models/expressions/#avoiding-race-conditions-using-f, "Avoiding race conditions using F()") 를 참고하세요
+
+이 문제를 해결하는 방법은 python memory로 db의 조회결과값을 가져오지 않고 database에서 직접 수정하는 방법을 사용하도록 한다.    
+F()객체는 모델 필드 또는 주석 값을 나타내며, 데이터베이스에서 python으로 값을 가져올 필요없이 데이터베이스에서 직접 작업을 한다.    
+(SQL쿼리생성)
+
+- 단건 : Choice Model Update
+- 다건 : Choice QuerySet Update
+  
+```python
+# polls/views.py
+from django.db.models import F
+# ... 생략 ...
+selected_choice = question.choice_set.get(pk=request.POST['choice'])
+# ... 생략 ...
+selected_choice.votes = F('votes') + 1
+selected_choice.save()
+
+or 
+
+selected_choice = question.choice_set.filter(pk=request.POST['choice'])
+selected_choice.update(votes=F('votes') + 1)
+```
+
+F() Expression을 알아보려면 [Avoiding race conditions using F()](https://docs.djangoproject.com/ko/3.0/ref/models/expressions/#avoiding-race-conditions-using-f, "Avoiding race conditions using F()") 를 참고하세요
+
+
+
+
 
 ## 제네릭 뷰 사용하기
 ### URLconf 수정
