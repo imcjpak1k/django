@@ -534,8 +534,8 @@ def results(request, question_id):
 F()객체는 모델 필드 또는 주석 값을 나타내며, 데이터베이스에서 python으로 값을 가져올 필요없이 데이터베이스에서 직접 작업을 한다.    
 (SQL쿼리생성)
 
-- 단건 : Choice Model Update
-- 다건 : Choice QuerySet Update
+- 단건 : Model Update
+- 다건 : QuerySet Update
   
 ```python
 # polls/views.py
@@ -548,6 +548,9 @@ selected_choice.save()
 
 or 
 
+# ... 생략 ...
+selected_choice = question.choice_set.filter(pk=request.POST['choice'])
+# ... 생략 ...
 selected_choice = question.choice_set.filter(pk=request.POST['choice'])
 selected_choice.update(votes=F('votes') + 1)
 ```
