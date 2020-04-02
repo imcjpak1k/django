@@ -605,13 +605,13 @@ class ResultsView(generic.DetailView):
 
  # Part 5: 테스팅
 > [Part 5: 테스팅](https://docs.djangoproject.com/ko/3.0/intro/tutorial05/ "Part 5: 테스팅")    
-> [UnitTest Framework - Assertion](https://www.tutorialspoint.com/unittest_framework/unittest_framework_assertion.htm, 'https://www.tutorialspoint.com/unittest_framework/unittest_framework_assertion.htm')
-개발한 polls 어플리케이션의 버그가 있는지?? 원하는 결과를 반환하는지?? unittest로 기능을 검증 및 값 검증을 할수 있다.   
+> [UnitTest Framework - Assertion](https://www.tutorialspoint.com/unittest_framework/unittest_framework_assertion.htm, 'https://www.tutorialspoint.com/unittest_framework/unittest_framework_assertion.htm')    
+개발한 polls 어플리케이션의 버그가 있는지?? 원하는 결과를 반환하는지?? unittest로 기능을 검증 및 값 검증
 - function test
 - view test
 
 ## function test(기능테스트)
-1 + 2 + 3 의 값이 7이 맞는지 여부를 확인하는 테스트케이스
+1 + 2 + 3 의 값이 7이 맞는지 여부를 확인하는 테스트케이스   
 위 합의 값이 7이 아니므로 assertioinError이 발생하고 해당 위치를 알려준다.
 ```python
 # polls/test.py
