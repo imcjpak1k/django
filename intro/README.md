@@ -604,11 +604,89 @@ class ResultsView(generic.DetailView):
 
 
  # Part 5: 테스팅
-> [Part 5: 테스팅](https://docs.djangoproject.com/ko/3.0/intro/tutorial05/ "Part 5: 테스팅")
+> [Part 5: 테스팅](https://docs.djangoproject.com/ko/3.0/intro/tutorial05/ "Part 5: 테스팅")    
+> [UnitTest Framework - Assertion](https://www.tutorialspoint.com/unittest_framework/unittest_framework_assertion.htm, 'https://www.tutorialspoint.com/unittest_framework/unittest_framework_assertion.htm')
+개발한 polls 어플리케이션의 버그가 있는지?? 원하는 결과를 반환하는지?? unittest로 기능을 검증 및 값 검증을 할수 있다.   
+- function test
+- view test
+
+## function test(기능테스트)
+1 + 2 + 3 의 값이 7이 맞는지 여부를 확인하는 테스트케이스
+위 합의 값이 7이 아니므로 assertioinError이 발생하고 해당 위치를 알려준다.
+```python
+# polls/test.py
+
+from django.test import TestCase
+class QuestionModelTests(TestCase):
+    def test_plus(self): 
+        self.assertEqual(1+2+3, 7) 
+```
+
+```bash
+(twoscoopsofdjango) C:\Users\imcjp\workspace\vscode\django\intro\mysite>python manage.py test polls
+Creating test database for alias 'default'...
+System check identified no issues (0 silenced).
+F.
+======================================================================
+FAIL: test_plus (polls.tests.QuestionModelTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\imcjp\workspace\vscode\django\intro\mysite\polls\tests.py", line 20, in test_plus
+    self.assertEqual(1+2+3, 7)
+AssertionError: 6 != 7
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.003s
+
+FAILED (failures=1)
+Destroying test database for alias 'default'...
+```
+
+### view test
+Client객체를 통해서 장고view 테스트를 진행할 수 있으며, 장고서버는 따로 구동할 필요가 없다.
+```python
+# polls/views.py
+from django.test import TestCase, Client
+from django.urls import reverse
+
+class QuestionModelTests(TestCase):
+    def test_index(self):
+        # client create
+        client = Client()
+
+        # path : /polls/
+        response = client.get(reverse('polls:index'))
+
+        # http 상태값 확인
+        self.assertEqual(response.status_code, 200)
+
+        # context에 latest_question_list이 있는지 여부
+        self.assertIn('latest_question_list', response.context)
+        latest_question_list = response.context['latest_question_list']
+
+        # 객체타입확인
+        from django.db.models import QuerySet
+        self.assertIsInstance(latest_question_list, QuerySet)
+```
+
+```bash
+(twoscoopsofdjango) C:\Users\imcjp\workspace\vscode\django\intro\mysite>python manage.py test polls
+Creating test database for alias 'default'...
+System check identified no issues (0 silenced).
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.029s
+
+OK
+Destroying test database for alias 'default'...
+
+(twoscoopsofdjango) C:\Users\imcjp\workspace\vscode\django\intro\mysite>
+```
 
 
  # Part 6: 정적 파일
-> [Part 6: 정적 파일](https://docs.djangoproject.com/ko/3.0/intro/tutorial06/ "Part 6: 정적 파일")
+> [Part 6: 정적 파일](https://docs.djangoproject.com/ko/3.0/intro/tutorial06/ "Part 6: 정적 파일")  
+PASS
 
  # Part 7: 관리자 페이지 커스터마이징
 > [Part 7: 관리자 페이지 커스터마이징](https://docs.djangoproject.com/ko/3.0/intro/tutorial07/ "Part 7: 관리자 페이지 커스터마이징")
