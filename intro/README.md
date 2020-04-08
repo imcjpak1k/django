@@ -698,3 +698,18 @@ PASS
 https://docs.djangoproject.com/ko/3.0/intro/reusable-apps/
 
 https://docs.djangoproject.com/ko/3.0/contents/
+## packaging
+1. django-polls 디렉토리생성
+```
+(twoscoopsofdjango) C:\Users\imcjp\workspace\vscode\django\intro>mkdir django-polls
+cd django-polls
+```
+2. django-polls 디렉토리로 'polls'앱을 모두 복사
+3. django-polls 디렉토리로 이동 후 파일생성
+   1. README.rst
+   2. LICENSE
+   3. MANIFRS.in
+   4. setup.cfg
+   5. setup.py
+4. packaging
+   1. python setup.py sdist
