@@ -688,6 +688,13 @@ Destroying test database for alias 'default'...
 > [Part 6: 정적 파일](https://docs.djangoproject.com/ko/3.0/intro/tutorial06/ "Part 6: 정적 파일")  
 PASS
 
- # Part 7: 관리자 페이지 커스터마이징
+ # [Part 7: 관리자 페이지 커스터마이징
 > [Part 7: 관리자 페이지 커스터마이징](https://docs.djangoproject.com/ko/3.0/intro/tutorial07/ "Part 7: 관리자 페이지 커스터마이징")
 
+
+# 심화 튜토리얼: 재사용 가능한 앱을 만드는 법
+> [심화 튜토리얼: 재사용 가능한 앱을 만드는 법](https://docs.djangoproject.com/ko/3.0/intro/reusable-apps/ "심화 튜토리얼: 재사용 가능한 앱을 만드는 법")
+> 
+https://docs.djangoproject.com/ko/3.0/intro/reusable-apps/
+
+https://docs.djangoproject.com/ko/3.0/contents/
