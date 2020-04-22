@@ -118,11 +118,24 @@ COMMIT;
  - choices
    - tuple 또는 enumeration을 선택하여 사용함
    - 선언한 항목은 form widget의 select box로 표현됨
+ - help_text
+   - form wedget에 표현됨. 
+   - 몰라도 됨
+ - primary_key
+   - False  : 기본값
+   - True   : Field를 primary key로 사용함. 
+ - unique
+   - False  : 기본값
+   - True   : unique Field
+ - Verbose field name
+   - 생략가능하며, 위치인자로 입력하며, 해당 내용은 form widget에 표현됨.
+   - admin화면에서 해당 필드명으로 표현됨 (몰라도 됨)
 
 ### Example
 ```python
 # https://docs.djangoproject.com/ko/3.0/ref/models/fields/#field-choices
 # choices tupule 1
+from django.db import models
 class Person(models.Model):
     # selectbox 
     #  - value:S, text:Small
@@ -216,9 +229,116 @@ class Person(models.Model):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     shirt_size = models.IntegerField(choices=ShirtSize.choices, default=ShirtSize.FREE)
+
+# Verbose filed name
+    first_name = models.CharField('첫번째 이름', max_length=30)
 ```
 
+## relationships
+### Many-to-one relationships Example
+```python
+from django.db import models
 
+class Manufacturer(models.Model):
+    pass
+
+class Car(models.Model):
+    manufacturer = models.ForeignKey(Manufacturer, on_delete=models.CASCADE)
+```
+```sql
+BEGIN;
+--
+-- Create model Manufacturer
+--
+CREATE TABLE "modelexample_manufacturer" (
+    "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT
+);
+--
+-- Create model Car
+--
+CREATE TABLE "modelexample_car" (
+    "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, 
+    "manufacturer_id" integer NOT NULL REFERENCES "modelexample_manufacturer" ("id") DEFERRABLE INITIALLY DEFERRED
+);
+
+CREATE INDEX "modelexample_car_manufacturer_id_b7baabb5" ON "modelexample_car" ("manufacturer_id");
+COMMIT;
+```
+
+### Many-to-Many relationships Example
+ManyToManyField를 정의할때에는 2개의 모델 중 하나의 모델에만 정의하여야 한다.
+```python
+class Topping(models.Model):
+    pass
+
+class Pizza(models.Model):
+    toppings = models.ManyToManyField(Topping)
+```
+```sql
+BEGIN;
+--
+-- Create model Topping
+--
+CREATE TABLE "modelexample_topping" (
+    "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT
+);
+--
+-- Create model Pizza
+--
+CREATE TABLE "modelexample_pizza" ( 
+    "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT
+);
+CREATE TABLE "modelexample_pizza_toppings" (
+    "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, 
+    "pizza_id" integer NOT NULL REFERENCES "modelexample_pizza" ("id") DEFERRABLE INITIALLY DEFERRED, 
+    "topping_id" integer NOT NULL REFERENCES "modelexample_topping" ("id") DEFERRABLE INITIALLY DEFERRED
+);
+
+CREATE UNIQUE INDEX "modelexample_pizza_toppings_pizza_id_topping_id_e07eee72_uniq" ON "modelexample_pizza_toppings" ("pizza_id", "topping_id");
+CREATE INDEX "modelexample_pizza_toppings_pizza_id_785cde20" ON "modelexample_pizza_toppings" ("pizza_id");
+CREATE INDEX "modelexample_pizza_toppings_topping_id_a71eb4fa" ON "modelexample_pizza_toppings" ("topping_id");
+COMMIT;
+```
+
+다른방법으로는.... 
+
+```python
+class Topping(models.Model):
+    pass
+
+class Pizza(models.Model):
+    pass
+
+class MakePizza(models.Model):
+    topping = models.ForeignKey(Topping, on_delete=models.CASCADE)
+    pizza = models.ForeignKey(Pizza, on_delete=models.CASCADE)
+```
+
+```sql
+--
+-- Create model Topping
+--
+CREATE TABLE "modelexample_topping" (
+    "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT
+);
+--
+-- Create model Pizza
+--
+CREATE TABLE "modelexample_pizza" ( 
+    "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT
+);
+--
+-- Create model MakePizza
+--
+CREATE TABLE "modelexample_makepizza" (
+    "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, 
+    "pizza_id" integer NOT NULL REFERENCES "modelexample_pizza" ("id") DEFERRABLE INITIALLY DEFERRED, 
+    "topping_id" integer NOT NULL REFERENCES "modelexample_topping" ("id") DEFERRABLE INITIALLY DEFERRED
+);
+CREATE INDEX "modelexample_makepizza_pizza_id_99256ae0" ON "modelexample_makepizza" ("pizza_id");
+CREATE INDEX "modelexample_makepizza_topping_id_f06b8dfa" ON "modelexample_makepizza" ("topping_id");
+COMMIT;
+```
 # 객체만들기
 [creating-objects](https://docs.djangoproject.com/ko/3.0/ref/models/instances/#creating-objects, '오프젝트 만들기')     
 

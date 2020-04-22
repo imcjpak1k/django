@@ -28,8 +28,8 @@ class Person(models.Model):
 
 
     person_id = models.AutoField(primary_key=True)
-    first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=30)
+    first_name = models.CharField(max_length=30, help_text='성')
+    last_name = models.CharField('test입력', max_length=30, help_text='이름')
     # shirt_size = models.CharField(max_length=1, choices=ShirtSize.choices, default=ShirtSize.FREE)
     # shirt_size = models.CharField(max_length=1, choices=SHIRT_SIZES)
     # shirt_size = models.CharField(blank=True, choices=ShirtType.choices, max_length=10)
@@ -40,3 +40,23 @@ class Person(models.Model):
 
     class Meta:
         db_table = 'person'
+
+
+class Manufacturer(models.Model):
+    pass
+
+class Car(models.Model):
+    manufacturer = models.ForeignKey(Manufacturer, on_delete=models.CASCADE)
+
+
+
+class Topping(models.Model):
+    pass
+
+class Pizza(models.Model):
+    # toppings = models.ManyToManyField(Topping)
+    pass
+
+class MakePizza(models.Model):
+    topping = models.ForeignKey(Topping, on_delete=models.CASCADE)
+    pizza = models.ForeignKey(Pizza, on_delete=models.CASCADE)
