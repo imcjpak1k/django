@@ -100,12 +100,9 @@ COMMIT;
         );
     COMMIT;
    ```
-
 > python manage.py migrate
 # 필드
-
 ## Field Options
-
  - default
    - 기본값
    - 기본값은 value 또는 callable object
@@ -130,7 +127,25 @@ COMMIT;
  - Verbose field name
    - 생략가능하며, 위치인자로 입력하며, 해당 내용은 form widget에 표현됨.
    - admin화면에서 해당 필드명으로 표현됨 (몰라도 됨)
-
+ - db_column
+   - 데이터베이스의 컬럼이름을 지정하며, 미 지정시 필드이름을 사용한다.
+ - db_index
+   - False  : 기본값
+   - True   : 필드의 인덱스 생성
+ - db_tablespace
+   - ....
+ - editable
+   - ....
+ - error_messages
+   - ....
+ - unique
+   - ....
+ - unique_for_date
+   - ....
+ - unique_for_month
+   - ....
+ - unique_for_year
+ - validators
 ### Example
 ```python
 # https://docs.djangoproject.com/ko/3.0/ref/models/fields/#field-choices
@@ -233,8 +248,41 @@ class Person(models.Model):
 # Verbose filed name
     first_name = models.CharField('첫번째 이름', max_length=30)
 ```
+## Field types
+- AutoField
+  - 자동증가하는 IntegerField를 생성 함.
+- BigAutoField
+  - 1부터 9223372036854775807까지의 숫자를 입력할 수 있는 필드생성.
+- BinaryField
+- BooleanField
+- CharField
+- DateField
+- DateTimeField
+- DecimalField
+- DurationField
+- EmailField
+- FileField
+- FilePathField   
+- FloatField
+- ImageField
+- IntegerField
+- GenericIPAddressField
+- NullBooleanField
+- PositiveIntegerField
+- PositiveSmallIntegerField
+- SlugField
+- SmallAutoField
+- SmallIntegerField
+- TextField
+- TimeField
+- URLField
+- UUIDField
+## relationships field
+### ForeignKey
+Many-to-one relationships은 2개의 위치인자가 필요하다.
+ - 모델과 관련된 클래스 이름
+ - on_delete option
 
-## relationships
 ### Many-to-one relationships Example
 ```python
 from django.db import models
@@ -300,7 +348,7 @@ CREATE INDEX "modelexample_pizza_toppings_topping_id_a71eb4fa" ON "modelexample_
 COMMIT;
 ```
 
-다른방법으로는.... 
+다른방법으로는 M:M모델을 정의하여 해결한다.
 
 ```python
 class Topping(models.Model):
@@ -339,8 +387,110 @@ CREATE INDEX "modelexample_makepizza_pizza_id_99256ae0" ON "modelexample_makepiz
 CREATE INDEX "modelexample_makepizza_topping_id_f06b8dfa" ON "modelexample_makepizza" ("topping_id");
 COMMIT;
 ```
+## Model meta option
+- abstract
+  - False   : 기본값
+  - True    : 추상클래스 선언
+- app_label
+- base_manager_name
+- db_table
+  - 모델에서 사용할 데이테베이스 테이블이름
+- db_tablespace
+- default_manager_name
+- default_related_name
+- get_latest_by
+- managed
+- order_with_respect_to
+- ordering
+- permissions
+- default_permissions
+- proxy
+- required_db_features
+- required_db_vendor
+- select_on_save
+- indexes
+- unique_together
+- index_together
+- constraints
+- verbose_name
+- verbose_name_plural
+- 
 # 객체만들기
-[creating-objects](https://docs.djangoproject.com/ko/3.0/ref/models/instances/#creating-objects, '오프젝트 만들기')     
+[creating-objects](https://docs.djangoproject.com/ko/3.0/ref/models/instances/#creating-objects, '오프젝트 만들기') 
+모델을 생성할 때 다음과 같은 방법으로 class를 만들어서 진행하였다. 
+```python
+# models.py
+from django.db import models
+class Book(models.Model):
+    title = models.CharField(max_length=100)
+```
+
+```shell
+C:\Users\imcjp\workspace\vscode\django\intro\mysite>python manage.py makemigrations modelexample  
+C:\Users\imcjp\workspace\vscode\django\intro\mysite>python manage.py migrate modelexample  
+
+C:\Users\imcjp\workspace\vscode\django\intro\mysite>python manage.py shell
+>>> from modelexample.models import Book
+>>> book = Book(title='테스트입력00001')
+>>> book.save()
+>>> Book.objects.all()
+<QuerySet [<Book: Book object (1)>]>
+```
+
+## classmethod 추가
+```python
+# models.py
+from django.db import models
+class Book(models.Model):
+    title = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.title
+    
+    @classmethod
+    def create(cls, title):
+        book = cls(title=title)
+        # do something with the book
+        return book
+```
+
+```shell
+C:\Users\imcjp\workspace\vscode\django\intro\mysite>python manage.py shell
+>>> from modelexample.models import Book 
+>>> book = Book.create('테슽스입력00002')
+>>> book
+<Book: 테슽스입력00002>
+>>> book.save()
+>>> Book.objects.all()
+<QuerySet [<Book: 테스트입력00001>, <Book: 테슽스입력00002>]>
+```
+
+## custom manager(일반적인방법)
+```python
+# models.py
+from django.db import models
+class BookManager(models.Manager):
+    def create_book(self, title):
+        book = self.create(title=title)
+        # do something with the book
+        return book
+
+class Book(models.Model):
+    title = models.CharField(max_length=100)
+    objects = BookManager()
+
+    def __str__(self):
+        return self.title
+```
+
+```shell
+C:\Users\imcjp\workspace\vscode\django\intro\mysite>python manage.py shell
+>>> from modelexample.models import Book 
+>>> book = Book.objects.create_book('manager test') 
+>>> book.save()
+>>> Book.objects.all()
+<QuerySet [<Book: 테스트입력00001>, <Book: 테슽스입력00002>, <Book: manager test>]>
+```
 
 # 쿼리만들기
-[Create Query](https://docs.djangoproject.com/ko/3.0/topics/db/queries/, '쿼리만들기')
+## ㅇㅇ
