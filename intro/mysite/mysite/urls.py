@@ -15,9 +15,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+# from Django.views.generic.base import RedirectView
+# from django.views.generic import RedirectView
+from . import views
 
 urlpatterns = [
+    path('', views.IndexView.as_view(), name='index'),
     path('polls/', include('polls.urls')),
     path('modelexample/', include('modelexample.urls')),
     path('admin/', admin.site.urls),
+    # path('<str:url>/',  RedirectView.as_view(url='<url_to_home_view>', permanent=False)),
+    # url(r'^.*$', RedirectView.as_view(url='<url_to_home_view>', permanent=False), name='index')
+    # path('redirect/<str:to_view>', RedirectView.as_view(url='<to_view>', permanent=False), name='redirect'),
 ]

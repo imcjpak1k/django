@@ -414,8 +414,9 @@ COMMIT;
 - constraints
 - verbose_name
 - verbose_name_plural
-- 
-# 객체만들기
+
+# Model instance reference
+## Creating objects
 [creating-objects](https://docs.djangoproject.com/ko/3.0/ref/models/instances/#creating-objects, '오프젝트 만들기') 
 모델을 생성할 때 다음과 같은 방법으로 class를 만들어서 진행하였다. 
 ```python
@@ -437,7 +438,7 @@ C:\Users\imcjp\workspace\vscode\django\intro\mysite>python manage.py shell
 <QuerySet [<Book: Book object (1)>]>
 ```
 
-## classmethod 추가
+### classmethod 추가
 ```python
 # models.py
 from django.db import models
@@ -465,22 +466,24 @@ C:\Users\imcjp\workspace\vscode\django\intro\mysite>python manage.py shell
 <QuerySet [<Book: 테스트입력00001>, <Book: 테슽스입력00002>]>
 ```
 
-## custom manager(일반적인방법)
+### custom manager(일반적인방법)
 ```python
 # models.py
 from django.db import models
 class BookManager(models.Manager):
-    def create_book(self, title):
-        book = self.create(title=title)
+    def create_book(self, title, author):
+        book = self.create(title=title, author=author)
         # do something with the book
         return book
 
 class Book(models.Model):
     title = models.CharField(max_length=100)
+    author = models.CharField(max_length=50, null=True)
     objects = BookManager()
 
     def __str__(self):
-        return self.title
+        # return self.title
+        return f'title={self.title}, author={self.author}'
 ```
 
 ```shell
@@ -489,8 +492,12 @@ C:\Users\imcjp\workspace\vscode\django\intro\mysite>python manage.py shell
 >>> book = Book.objects.create_book('manager test') 
 >>> book.save()
 >>> Book.objects.all()
-<QuerySet [<Book: 테스트입력00001>, <Book: 테슽스입력00002>, <Book: manager test>]>
+<QuerySet [<Book: title=테스트입력00001, author=None>, <Book: title=테슽스입력00002, author=None>, <Book: title=manager test, author=None>, <Book: title=title, author=park>]>
 ```
+
+### Customizing model loading
+음..... 모르겠다... ㅡㅡ;;;;
+
 
 # 쿼리만들기
 ## ㅇㅇ

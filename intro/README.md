@@ -562,6 +562,8 @@ F() Expression을 알아보려면 [Avoiding race conditions using F()](https://d
 
 
 ## 제네릭 뷰 사용하기
+http://ruaa.me/django-view/
+https://docs.djangoproject.com/en/dev/ref/class-based-views/
 ### URLconf 수정
 <question_id> 에서 <pk> 로 변경 
 

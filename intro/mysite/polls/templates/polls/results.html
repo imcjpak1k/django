@@ -1,10 +1,22 @@
-<h1>template polls html</h1>
-<h1>{{ question.question_text }}</h1>
+{% extends "base.html" %}
 
-<ul>
-{% for choice in question.choice_set.all %}
-    <li>{{ choice.choice_text }} -- {{ choice.votes }} vote{{ choice.votes|pluralize }}</li>
-{% endfor %}
-</ul>
+{% block biz-js %}
 
-<a href="{% url 'polls:detail' question.id %}">Vote again?</a>
+{% endblock %}
+
+
+{% block content %}
+    {% block title %} Django Example Polls Result {% endblock %}
+
+    <h1>template polls html</h1>
+    <h1>{{ question.question_text }}</h1>
+
+    <ul>
+    {% for choice in question.choice_set.all %}
+        <li>{{ choice.choice_text }} -- {{ choice.votes }} vote{{ choice.votes|pluralize }}</li>
+    {% endfor %}
+    </ul>
+
+    <a href="{% url 'polls:detail' question.id %}">Vote again?</a>
+
+    {% endblock %}

@@ -8,7 +8,8 @@ from .models import Question, Choice
 
 # Create your views here.
 class IndexView(generic.ListView):
-    template_name = 'polls/index.html'
+    # template_name = 'polls/index.html'
+    template_name = 'polls/list.html'
     context_object_name = 'latest_question_list'
 
     def get_queryset(self):
@@ -22,8 +23,16 @@ class DetailView(generic.DetailView):
 class ResultsView(generic.DetailView):
     model = Question
     template_name = 'polls/results.html'
-    
 
+class RegisterView(generic.DetailView):
+    template_name = 'polls/regigter.html'
+
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name)
+
+    def post(self, request, *args, **kwargs):
+        print(f'test post')
+        
 def vote(request, question_id):
     # question_id로 Question조회
     question = get_object_or_404(Question, pk=question_id)

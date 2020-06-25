@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <title>{% block title %}{% endblock %}</title>
+        {% block import-css %}{% endblock %}
+        {% block import-js %}{% endblock %}
+        {% block meta %}{% endblock %}
+        {% block biz-js %}{% endblock %}
+    </head>
+    <body>
+        <div id="sidebar">
+            {% block sidebar %}
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="{% url 'polls:index' %}">BlogHome</a></li>
+            </ul>
+            {% endblock %}
+        </div>
+        <div id="content">
+            {% block content %}{% endblock %}
+        </div>
+    </body>
+</html>

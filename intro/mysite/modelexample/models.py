@@ -93,17 +93,17 @@ class Entry(models.Model):
     def __str__(self):
         return self.headline
 
-
 class BookManager(models.Manager):
     def create_book(self, title, author):
         book = self.create(title=title, author=author)
         return book
 
+
+from django.db.models import DEFERRED
 class Book(models.Model):
     title = models.CharField(max_length=100)
     author = models.CharField(max_length=50, null=True)
     objects = BookManager()
 
     def __str__(self):
-        return self.title 
-
+        return f'title={self.title}, author={self.author}'
