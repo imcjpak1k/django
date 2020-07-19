@@ -123,13 +123,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-# -----------------------------------------------------------------------------------------
 # open api 인증정보
-# -----------------------------------------------------------------------------------------
 OPEN_API_AUTHORIZATION = {
     # 네이버
     'NAVER' : {
-        'X-NCP-APIGW-API-KEY-ID': '4x7btpvjs3',
-        'X-NCP-APIGW-API-KEY': 'V9kKAURy62T92qvdgXyWcsz11snsncFeCDqMlfTl',
+        'X-NCP-APIGW-API-KEY-ID': 'client id',
+        'X-NCP-APIGW-API-KEY': 'client security key',
     },
 }
