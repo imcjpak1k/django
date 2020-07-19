@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <title>네비게이션</title>
+    
+</head>
+<body>
+출발지 : <input type="text" name="start" id="start" size="40"></br>
+도착지 : <input type="text" name="goal" id="goal" size="40"></br>
+<button id='btnSearch'>경로탐색</button> </br>
+zoom : <div id='zoom'>???</div>
+
+
+<style type="text/css">
+    .search { position:absolute;z-index:1000;top:20px;left:20px; }
+    .search #address { width:150px;height:20px;line-height:20px;border:solid 1px #555;padding:5px;font-size:12px;box-sizing:content-box; }
+    .search #submit { height:30px;line-height:30px;padding:0 10px;font-size:12px;border:solid 1px #555;border-radius:3px;cursor:pointer;box-sizing:content-box; }
+    .search #start { height:30px;line-height:30px;padding:0 10px;font-size:12px;border:solid 1px #555;border-radius:3px;cursor:pointer;box-sizing:content-box; }
+    .search #goal { height:30px;line-height:30px;padding:0 10px;font-size:12px;border:solid 1px #555;border-radius:3px;cursor:pointer;box-sizing:content-box; }
+    .search #waypoint { height:30px;line-height:30px;padding:0 10px;font-size:12px;border:solid 1px #555;border-radius:3px;cursor:pointer;box-sizing:content-box; }
+    .search #option { height:30px;line-height:30px;padding:0 10px;font-size:12px;border:solid 1px #555;border-radius:3px;cursor:pointer;box-sizing:content-box; }
+    .search #testmarker { height:30px;line-height:30px;padding:0 10px;font-size:12px;border:solid 1px #555;border-radius:3px;cursor:pointer;box-sizing:content-box; }
+</style>
+<div id="map" style="width:100%;height:600px;">
+    <div class="search">
+        <input id="address" type="text" placeholder="검색할 주소" value="불정로 6" />
+        <input id="btnSubmit" type="button" value="주소 검색" />
+        <input id="btnStart" type="button" value="출발지" />
+        <input id="btnGoal" type="button" value="도착지" />
+        <input id="btnWaypoint" type="button" value="경유지" />
+        <select id='option'>
+            <option value="trafas">실시간 빠른길</option>
+            <option value="tracomfort">실시간 편한길</option>
+            <option value="traoptimal">실시간</option>
+        </select>
+        <button id="btnTestmarker" type="button" value="marker생성">marker생성</button>
+        <button id="btnTestmarkerCluster" type="button" value="marker생성(cluster)">marker생성(cluster)</button>
+    </div>
+</div>
+<div id='message'>.....진행중.....</div>
+<div id='navi_result'></div>
+
+
+<!-- https://navermaps.github.io/maps.js.ncp/ -->
+<!-- https://navermaps.github.io/maps.js.ncp/docs/tutorial-2-Getting-Started.html -->
+<!-- https://navermaps.github.io/maps.js/docs/naver.maps.Event.html -->
+<!-- https://navermaps.github.io/maps.js.ncp/docs/naver.maps.Map.html-->
+<!-- https://apidocs.ncloud.com/ko/ai-naver/maps_directions/driving/ -->
+<script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=4x7btpvjs3&callback=map_load_complete"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"> </script>
+<script type="text/javascript" src="../static/js/MarkerClustering.js"> </script>
+<script type="text/javascript" src="../static/data/accidentdeath.js"></script>
+
+<script>
+    // 지도생성
+    var map = new naver.maps.Map('map', {
+        // center: new naver.maps.LatLng(37.3646656, 127.108828),      // 현재위치정보로 표시
+        center: new naver.maps.LatLng(37.5247028, 126.9251289),      // 여의도
+        zoom: 15,
+        zoomControl: true,  
+        zoomControlOptions: {
+            style: naver.maps.ZoomControlStyle.SMALL,
+            position: naver.maps.Position.TOP_RIGHT
+        },
+    });
+    
+    // 경로안내 라인
+    let polyline = new naver.maps.Polyline({
+        map: map,
+        path: [],
+        clickable: true,
+        strokeColor: '#e00400',
+        strokeStyle: 'long',
+        strokeOpacity: 0.5,
+        strokeWeight: 10
+    });
+    
+    // 위치정보
+    let mapInfoWindow = new naver.maps.InfoWindow({
+        content: '',
+        anchorSkew: true,
+    });
+
+    let markerClustering = undefined;
+
+    // 경유지
+    // let waypoints_array = ['127.12345,37.12345', '128.12345,38.12345'];
+    let waypoints_array = [];
+
+    // 출발지 marker
+    let marker_start = undefined;
+    // 도착지 marker
+    let marker_goal = undefined;
+    // 회사 marker
+    let marker_companys = [];
+    // 경유지 marker
+    let marker_waypoints = [];
+
+
+    
+    // /**
+    //  * zoom_changed Event
+    //  * */
+    // naver.maps.Event.addListener(map, 'zoom_changed', function(zoom) {
+    //     $('#zoom').html(zoom);
+    // });
+
+    // /**
+    //  * bounds_changed Event
+    //  * */
+    // naver.maps.Event.addListener(map, 'bounds_changed', function(bounds) {
+    //     // contentEl.find('.center').text(map.getCenterPoint());
+    //     // console.log('Center: ' + bounds);
+    //     // console.log('Center: ' + map.getBounds());
+    //     // console.log('Center: ' + map.getCenter().toString() + ', Bounds: ' + bounds.toString());
+    //     $('#center').html(`Center:  ${map.getCenter().toString()} </br> Bounds: ${bounds.toString()} </br> CenterPoint:  ${map.getCenterPoint()}`);
+    // }); 
+
+
+    // /**
+    //  * idle Event
+    //  * */
+    // naver.maps.Event.addListener(map, 'idle', function() {
+    //     // 화면에 보이지 않는 marker숨김처리
+    //     // marker가 많으면 속도가 많이 느려짐...(대충 600건이상인 경우)
+    //     handleCompanyMarker(map, marker_companys);
+    // });
+
+    function handleCompanyMarker(map, markers) {
+        var mapBounds = map.getBounds();
+        for(let marker of markers) {
+            let position = marker.getPosition();
+            if(mapBounds.hasLatLng(position)) {
+                // show
+                showMarker(map, marker);
+            }
+            else {
+                // hide
+                hideMarker(map, marker);
+            }
+        }
+    }
+
+    function showMarker(map, marker) {
+        if (marker.setMap()) return;
+        marker.setMap(map);
+    }
+    function hideMarker(map, marker) {
+        if (!marker.setMap()) return;
+        marker.setMap(null);
+    }
+    function setVisiablePloyline(b) {
+        polyline.setVisible(b);
+    }
+
+
+
+    const createMakterCluster = () => {
+        if(markerClustering) {
+            return markerClustering;
+        }
+
+        let htmlMarker1 = {
+                content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(../static/images/cluster-marker-1.png);background-size:contain;"></div>',
+                size: N.Size(40, 40),
+                anchor: N.Point(20, 20)
+            },
+            htmlMarker2 = {
+                content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(../static/images/cluster-marker-2.png);background-size:contain;"></div>',
+                size: N.Size(40, 40),
+                anchor: N.Point(20, 20)
+            },
+            htmlMarker3 = {
+                content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(../static/images/cluster-marker-3.png);background-size:contain;"></div>',
+                size: N.Size(40, 40),
+                anchor: N.Point(20, 20)
+            },
+            htmlMarker4 = {
+                content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(../static/images/cluster-marker-4.png);background-size:contain;"></div>',
+                size: N.Size(40, 40),
+                anchor: N.Point(20, 20)
+            },
+            htmlMarker5 = {
+                content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(../static/images/cluster-marker-5.png);background-size:contain;"></div>',
+                size: N.Size(40, 40),
+                anchor: N.Point(20, 20)
+            };
+    
+            markerClustering = new MarkerClustering({
+                minClusterSize: 2,
+                maxZoom: 14,
+                map: map,
+                markers: marker_companys,
+                disableClickZoom: false,
+                gridSize: 120,
+                icons: [htmlMarker1, htmlMarker2, htmlMarker3, htmlMarker4, htmlMarker5],
+                indexGenerator: [10, 100, 200, 500, 1000],
+                stylingFunction: function(clusterMarker, count) {
+                    // debugger
+                    $(clusterMarker.getElement()).find('div:first-child').text(count);
+                }
+            });
+
+            return markerClustering;
+    } ;
+
+
+    const showMakterCluster = () => {
+        markerClustering = createMakterCluster();
+        markerClustering.setMap(map);
+    };
+    const hideMakterCluster = () => {
+        if(!markerClustering) return;
+        markerClustering.setMap(null);
+    };
+
+    
+    /**
+     * ployline 주위의 marker 보여주기
+     */
+     const showPolylineBoundMarker = () => {
+    //  const testVisiableMarker() {
+        let paths = polyline.getPath();
+        if(!paths) {
+            return;
+        }
+
+        let markers = marker_companys.slice();
+        let showMarker = {}
+        for(let path of paths.getArray()) {
+            for(let marker of markers) {
+                // 적용된건은 skip처리
+                if(showMarker[marker._nmarker_id]) {
+                    continue;
+                }
+
+                // 거리계산
+                let distince = map.getProjection().getDistance(path, marker.getPosition());   // 단위 meter 
+                if(distince <= 3000 )   {   // 3km이내
+                    marker.setVisible(true);
+                    
+                    // 활성화 marker
+                    showMarker[marker._nmarker_id] = marker;
+                }
+                else {
+                    marker.setVisible(false);
+                }
+            }
+        }
+    }
+
+
+
+
+    /**
+    * callback function
+    */ 
+    function map_load_complete() {
+        $('#message').html('지도를 로드하였습니다.');
+    }
+
+    /**
+     * Marker 생성
+     */
+    const fnc_create_marker = (_map, markerOpt={title:'', type:undefined, position:undefined, draggable:false}) => {
+        if(!_map) {
+            alert('map객체가 존재하지 않습니다. [');
+            console.log(this.name);
+            return;
+        }
+
+        let infoWindow = undefined;
+        let icon_opt = undefined;
+        switch(markerOpt.type) {
+            case 'start':   // 출발지
+                // icon option
+                icon_opt = {
+                    url: 'https://ssl.pstatic.net/static/maps/m/pin_start.png', //50, 68 크기의 원본 이미지
+                    size: new naver.maps.Size(36, 37),
+                    scaledSize: new naver.maps.Size(36, 37),
+                    origin: new naver.maps.Point(0, 0),
+                    anchor: new naver.maps.Point(18, 19)
+                }
+                
+                // marker info window
+                infoWindow = new naver.maps.InfoWindow({
+                    content: '<div style="width:150px;text-align:center;padding:10px;">The Letter is <b> start test </b>.</div>'
+                });
+                break;  
+            case 'goal':    // 도착지
+                // icon option
+                icon_opt = {
+                    url: 'https://ssl.pstatic.net/static/maps/m/pin_arrival.png', //50, 68 크기의 원본 이미지
+                    size: new naver.maps.Size(36, 37),
+                    scaledSize: new naver.maps.Size(36, 37),
+                    origin: new naver.maps.Point(0, 0),
+                    anchor: new naver.maps.Point(18, 19)
+                }
+                
+                // marker info window
+                infoWindow = new naver.maps.InfoWindow({
+                    content: '<div style="width:150px;text-align:center;padding:10px;">The Letter is <b> goal test </b>.</div>'
+                });
+                break;
+            case 'company': // 회사표시
+                let index = marker_companys.length;
+                // icon option
+                icon_opt = undefined;
+                // icon_opt = {}
+                
+                // marker info window
+                infoWindow = new naver.maps.InfoWindow({
+                    content: [
+                                '<div class="iw_inner">',
+                                '   <h3>XXX회사 순번 ['+ index +']</h3>',
+                                '   <p>서울특별시 중구 태평로1가 31 | 서울특별시 중구 세종대로 110 서울특별시청<br />',
+                                '       02-120 | 공공,사회기관 &gt; 특별,광역시청<br />',
+                                '       <a href="http://www.seoul.go.kr" target="_blank">www.seoul.go.kr/</a>',
+                                '       <button id="__btnWaypoint" onclick="addWayPoint('+markerOpt.position._lat+','+markerOpt.position._lng+')">경유지설정</button> </br>',
+                                '   </p>',
+                                '</div>'
+                            ].join(''),
+                    maxWidth: 300,
+                    backgroundColor: "#eee",
+                    borderColor: "#2db400",
+                    borderWidth: 5,
+                    anchorSkew: true,
+                    anchorColor: "#eee",
+                    anchorSize: new naver.maps.Size(30, 30),
+                    pixelOffset: new naver.maps.Point(20, -20)
+                });
+                break;
+            default:   // 선택표시
+                // icon option
+                icon_opt = undefined;
+                
+                // marker info window
+                infoWindow = undefined;
+                break;
+        }
+
+        
+        // let marker = new naver.maps.Marker({
+        //     position: new naver.maps.LatLng(37.3613962, 127.1112487),
+        //     map: null,
+        //     title: '출발',
+        //     icon: {
+        //         content: [
+        //             '<div style="background-color:red;">',
+        //                 '출발',
+        //             '</div>'
+        //         ].join(''),
+        //         size: new naver.maps.Size(38, 58),
+        //         anchor: new naver.maps.Point(19, 58),
+        //     },
+        //     draggable: true
+        // });
+
+        // marker
+        let marker = new naver.maps.Marker({
+            map: _map,
+            title : markerOpt.title || '',
+            position: markerOpt.position,
+            draggable: markerOpt.draggable || false,
+            size: new naver.maps.Size(38, 58),
+            anchor: new naver.maps.Point(19, 58),
+            zIndex: 100,
+            icon: icon_opt
+        });
+    
+        
+        // infoWindow 추가
+        marker['infoWindow'] = infoWindow;
+
+        // mark이벤트추가
+        naver.maps.Event.addListener(marker, 'click', markerEventHandler(marker));
+        
+        
+        switch(markerOpt.type) {
+            case 'company': // 회사표시
+                // 회사마커 추가
+                marker_companys.push(marker); 
+                break;
+            case 'start':   // 출발지
+            case 'gole':    // 도착지
+            default:   // 선택표시
+                break;
+        }
+
+        return marker;
+    };
+
+    /**
+     * marker를 Click시 InfoWindow는 toggle로 show/hide를 반복하며,
+     * 다른 marker의 InfoWindow는 hide처리된다.
+     * */
+     const markerEventHandler = (marker) => {
+    //  function markerEventHandler(marker) {
+        return function(e)  {
+            // console.log(`call -- ${marker._nmarker_id}`);
+            let infoWindow = marker['infoWindow'];
+            if(!infoWindow) {
+                return;
+            }
+    
+            if(infoWindow.getMap()) {
+                // infoWindow.close();
+                closeInfoWindow(infoWindow);
+            }
+            else {
+                infoWindow.open(map, marker)
+            }
+        }
+    }
+
+    /**
+     * InfoWindow close
+     * */
+    const closeInfoWindow = (infoWindow) => {
+    // function closeInfoWindow(infoWindow) {
+        if(!infoWindow) {
+            return;
+        }
+
+        if(infoWindow.getMap()) {
+            infoWindow.close();
+        }
+    }
+    /**
+     * Add WayPoint
+     * */
+    const addWayPoint = (lat, lng) => {
+    // function addWayPoint(lat, lng) {
+        // polyline visiable 
+        setVisiablePloyline(false);
+        // add waypoint
+        marker_waypoints.push(`${lng},${lat}`);
+    }
+
+    /**
+     * 경도탐색 결값값을 기준으로 지도의 중심지이동 및 크기조절
+     * 출발~도착지 경로를 중심으로 전체보이도록 조절
+     */
+     const refreshMapCenterZoom = () => {
+        // 17에서 시작하자
+        map.setZoom( 17 );
+
+        // let pointBounds = new naver.maps.PointBounds.bounds(marker_start.getPosition(), marker_goal.getPosition());
+        let pointBounds = naver.maps.PointBounds.bounds.apply(null, polyline.getPath().getArray());
+        // 중심값적용
+        map.setCenter(pointBounds.getCenter());
+        
+        // marker가 화면에 보일때까지 zoom처리
+        while(!map.getBounds().hasLatLng(pointBounds.getMax()) || !map.getBounds().hasLatLng(pointBounds.getMin())) {
+        // while(!map.getBounds().hasLatLng(marker_start.getPosition()) || !map.getBounds().hasLatLng(marker_goal.getPosition())) {
+            map.setZoom(map.getZoom() - 1); // 축소
+        }        
+     }
+
+
+
+
+        
+    const initGeocoder = () => {
+        // function initGeocoder() {
+        if (!map.isStyleMapReady) {
+            return;
+        }
+            
+        /**
+         * zoom_changed Event
+         * */
+        naver.maps.Event.addListener(map, 'zoom_changed', function(zoom) {
+            $('#zoom').html(zoom);
+        });
+
+        /**
+         * bounds_changed Event
+         * */
+        naver.maps.Event.addListener(map, 'bounds_changed', function(bounds) {
+            // contentEl.find('.center').text(map.getCenterPoint());
+            // console.log('Center: ' + bounds);
+            // console.log('Center: ' + map.getBounds());
+            // console.log('Center: ' + map.getCenter().toString() + ', Bounds: ' + bounds.toString());
+            // $('#center').html(`Center:  ${map.getCenter().toString()} </br> Bounds: ${bounds.toString()} </br> CenterPoint:  ${map.getCenterPoint()}`);
+        }); 
+
+
+        /**
+         * idle Event
+         * */
+        naver.maps.Event.addListener(map, 'idle', function() {
+            // 화면에 보이지 않는 marker숨김처리
+            // marker가 많으면 속도가 많이 느려짐...(대충 600건이상인 경우)
+            handleCompanyMarker(map, marker_companys);
+        });
+
+        
+        map.addListener('click', function(e) {
+            // 좌표로 주소조회하기
+            searchCoordinateToAddress(e.coord);
+        });
+
+        $('#address').on('keydown', function(e) {
+            var keyCode = e.which;
+
+            if (keyCode === 13) { // Enter Key
+                searchAddressToCoordinate($('#address').val());
+            }
+        });
+
+        $('#btnSubmit').unbind("click").bind('click', function(e) {
+            e.preventDefault();
+
+            searchAddressToCoordinate($('#address').val());
+        });
+
+        $('#btnStart').unbind("click").bind('click', (e) => {
+            e.preventDefault();
+            
+            // 위치정보가 없으면 처리하지 않음
+            if(!mapInfoWindow || !mapInfoWindow.getMap()) {
+                return;
+            }
+            // 위경도
+            let latlng = mapInfoWindow.getPosition();
+            // marker create
+            // marker_start = marker_start || createStartMarker(map);
+            marker_start = marker_start || fnc_create_marker(map, {title:'출발', type:'start', position:latlng});
+            // marker close (마커이동시 show/hide라 toggle로 발생함)
+            closeInfoWindow(marker_start['infoWindow']);
+            // 위치지정 또는 이동
+            marker_start.setPosition(latlng);
+            
+            // polyline visiable 
+            setVisiablePloyline(false);
+
+            $('#start').val(`${latlng._lng},${latlng._lat}`);
+        });
+
+        $('#btnGoal').unbind("click").bind('click', function(e) {
+            e.preventDefault();
+            
+            // 위치정보가 없으면 처리하지 않음
+            if(!mapInfoWindow || !mapInfoWindow.getMap()) {
+                return;
+            }
+            // 위경동
+            let latlng = mapInfoWindow.getPosition();
+            // marker create
+            marker_goal = marker_goal || fnc_create_marker(map, {title:'도착', type:'goal', position:latlng});
+            // marker close (마커이동시 show/hide라 toggle로 발생함)
+            closeInfoWindow(marker_goal['infoWindow']);
+            // 위치지정
+            marker_goal.setPosition(latlng);
+            
+            // polyline visiable 
+            setVisiablePloyline(false);
+
+            $('#goal').val(`${latlng._lng},${latlng._lat}`);
+        });
+
+        $('#btnWaypoint').unbind("click").bind('click', function(e) {
+            e.preventDefault();
+            
+            alert('waypoint' );
+        });
+
+        $('#btnSearch').unbind("click").bind('click', function() {
+            direct5_call();
+        });
+
+
+        $('#btnTestmarker').unbind("click").bind('click', function() {
+            testMarkerCreate();
+        });
+        $('#btnTestmarkerCluster').unbind("click").bind('click', function() {
+            testMarkerCreate(true);
+        });
+        
+
+
+
+
+        // searchAddressToCoordinate('정자동 178-1');
+    }
+
+
+    naver.maps.onJSContentLoaded = initGeocoder;
+    naver.maps.Event.once(map, 'init_stylemap', initGeocoder);
+
+
+
+
+
+
+
+
+
+
+
+
+    // 좌표로 주소조회하기
+    function searchCoordinateToAddress(latlng) {
+        closeInfoWindow(mapInfoWindow);
+
+        
+        $.ajax({
+            type: 'post',
+            dataType:'json',
+            contentType : 'application/json; charset=utf-8',
+            url: `http://127.0.0.1:5500/navermap/reversegeocode`,
+            data : JSON.stringify({
+                coords: `${latlng._lng},${latlng._lat}`,
+                orders: 'legalcode,admcode,addr,roadaddr'       //'addr,roadaddr'         //'admcode'
+            }),
+            success:function(data) {
+                let htmlAddresses = [];
+                if(data.status.code != 0) {
+                    alert(`error : ${data.status.message}` )
+                }
+
+                // L: 법정동, A: 행정동, S: 동일법정동 이름 존재하는 행정동
+                for(let result of data.results) {
+                    let code = result.code;
+                    let land = result.land;
+                    let region = result.region;
+
+                    // 정보가 없으면 skip
+                    if(!region.area1  && !region.area1.name) {
+                        continue;
+                    }
+                    
+                    switch(result.name) {
+                        // case 'legalcode':   // 법정동
+                        //     htmlAddresses.push(`법정동 : ${region.area1.name} ${region.area2.name} ${region.area3.name} ${region.area4.name}`)
+                        //     break;
+                        // case 'admcode':   // 행정동
+                        //     htmlAddresses.push(`행정동 : ${region.area1.name} ${region.area2.name} ${region.area3.name} ${region.area4.name}`)
+                            // break;
+                        case 'addr':   // 지번
+                            htmlAddresses.push(`지번 : ${region.area1.name} ${region.area2.name} ${region.area3.name} ${region.area4.name} ${land.number1} ${land.number2}`)
+                            break;
+                        case 'roadaddr':   // 도로명
+                            htmlAddresses.push(`도로명 : ${region.area1.name} ${region.area2.name} ${land.name} ${land.number1} ${land.addition0.value}`)
+                            break;
+                    }
+                }
+                        
+                mapInfoWindow.setContent([
+                    '<div style="padding:10px;min-width:200px;line-height:150%;">',
+                    '<h4">좌표로 주소검색</h4><br />',
+                    `<h5">new naver.maps.LatLng(${latlng._lat},${latlng._lng}),</h5><br />`,
+                    htmlAddresses.join('<br />'),
+                    '<br/>',
+                    '<button onClick="closeInfoWindow(mapInfoWindow);">닫기</button>',
+                    '</div>'
+                ].join('\n'));
+                mapInfoWindow.open(map, latlng);
+            }
+        }); 
+    }
+
+    function searchAddressToCoordinate(address) {
+        closeInfoWindow(mapInfoWindow);
+        
+        $.ajax({
+            type: 'post',
+            dataType:'json',
+            contentType : 'application/json; charset=utf-8',
+            url: `http://127.0.0.1:5500/navermap/geocode`,
+            data : JSON.stringify({
+                query: address
+            }),
+            success:function(data) {
+                if(data.errorMessage) {
+                    alert(`error : ${data.errorMessage}` )
+                    return;
+                }
+                
+                if (data.meta.totalCount === 0) {
+                    return alert('No result.');
+                }
+
+                let point = undefined;
+                let htmlAddresses = [];
+                // L: 법정동, A: 행정동, S: 동일법정동 이름 존재하는 행정동
+                for(let item of data.addresses) {
+                    point = new naver.maps.Point(item.x, item.y);
+                    
+                    htmlAddresses.push(`[좌표] ${item.x}, ${item.y}`);
+                    if (item.roadAddress) {
+                        htmlAddresses.push(`[도로명 주소] ${item.roadAddress}`);
+                    }
+
+                    if (item.jibunAddress) {
+                        htmlAddresses.push(`[지번 주소] ${item.jibunAddress}`);
+                        // htmlAddresses.push('[지번 주소] ' + item.jibunAddress);
+                    }
+
+                    if (item.englishAddress) {
+                        htmlAddresses.push(`[영문명 주소] ${item.englishAddress}`);
+                        // htmlAddresses.push('[영문명 주소] ' + item.englishAddress);
+                    }
+                }
+                        
+                mapInfoWindow.setContent([
+                    '<div style="padding:10px;min-width:200px;line-height:150%;">',
+                    '<h4">주소로 좌표조회</h4><br />',
+                    `<h5">건수 : ${data.meta.totalCount}</h5><br />`,
+                    `<h5">new naver.maps.LatLng(${point.y},${point.x}),</h5><br />`,
+                    htmlAddresses.join('<br />'),
+                    '<br/>',
+                    '<button onClick="closeInfoWindow(mapInfoWindow);">닫기</button>',
+                    '</div>'
+                ].join('\n'));
+                mapInfoWindow.open(map, point);
+            }
+        }); 
+    }
+
+
+
+
+
+    /**
+     * 현재위치에 랜덤으로 marker 생성
+     * */
+    function testMarkerCreate(bool) {
+        console.log(`testMarkerCreate bool : ${bool}`)
+
+        let data = accidentDeath.searchResult.accidentDeath;
+        for (var i = 0, ii = data.length; i < ii; i++) {
+            let spot = data[i];
+            fnc_create_marker(map, {type:'company', position: new naver.maps.LatLng(spot.grd_la, spot.grd_lo)});
+            // var spot = data[i],
+            //     latlng = new naver.maps.LatLng(spot.grd_la, spot.grd_lo),
+            //     marker = new naver.maps.Marker({
+            //         position: latlng,
+            //         draggable: false
+            //     });
+
+            // markers.push(marker);
+        }
+
+        if(bool) {
+            showMakterCluster();
+        }
+        
+    }
+
+ 
+
+    function direct5_call() {
+
+        if(!marker_start || !marker_goal) {
+            alert('경로를 설정하여 주십시오.');
+            return;
+        }
+
+        
+        $.ajax({
+            type: 'post',
+            dataType:'json',
+            contentType : 'application/json; charset=utf-8',
+            url: `http://127.0.0.1:5500/navermap/direction5`,
+            data : JSON.stringify({
+                'start' : `${marker_start.getPosition()._lng},${marker_start.getPosition()._lat}`,
+                'goal' : `${marker_goal.getPosition()._lng},${marker_goal.getPosition()._lat}`,
+                'option' : $('#option').val(),
+                'waypoints' : `${marker_waypoints.join('|')}`,
+            }),
+            success:function(data) {
+                // 결과메세지 입력
+                $('#message').html( data.message );
+                if(data.code != 0) {
+                    return;
+                }
+                
+                let route_data = data.route.traoptimal || data.route.tracomfort || data.route.trafas;
+                let guide_array = route_data[0].guide;
+                let path_array = route_data[0].path;
+                let section_array = route_data[0].section;
+                let summary_data = route_data[0].summary;
+                
+                // 중심지이동
+                // map.setCenter(new naver.maps.LatLng(37.3595953, 127.1053971)); 
+                // 경로그리기
+                polyline.setPath( path_array );
+                
+                // polyline visiable 
+                setVisiablePloyline(true);
+                
+                // 지도중심지 이동 및 화면확대
+                refreshMapCenterZoom();
+
+                let seconds = Math.trunc(( summary_data.duration / (1000) ) % 60);              // 초
+                let minute = Math.trunc(( summary_data.duration / (1000 * 60 )) % 60 ) ;        // 분
+                let hour = Math.trunc((( summary_data.duration / (1000 * 60 * 60)) % 24 )) ;    // 시간
+                let timestr = '';
+                if(hour > 0) {
+                    timestr = `${hour}시 ${minute}분 ${hour}초 `;
+                }
+                else if(minute > 0) {
+                    timestr = `${minute}분 ${hour}초 `;
+                }
+                else {
+                    timestr = `${hour}초 `;
+                }
+
+                    // 시간 : ${Math.trunc( Math.round( summary_data.duration / (1000 * 60)) )}분  </br>
+                hideMakterCluster();
+                // 근처회사 marker
+                showPolylineBoundMarker();                // duration: 499724 ms
+                $('#navi_result').html(
+                    `거리 : ${Math.trunc( summary_data.distance / 1000)}.${Math.trunc( summary_data.distance % 1000 / 10)} KM </br>
+                    시간 : ${timestr}  </br>
+                    주유비 : ${summary_data.fuelPrice}원 </br>
+                    택시비 : ${summary_data.taxiFare}원  </br>
+                    `
+                );
+                
+            }
+        }); 
+    }
+</script>
+</body>
+</html>
+
+
+

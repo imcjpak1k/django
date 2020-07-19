@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <title>네비게이션</title>
+    
+</head>
+<body>
+출발지 : <input type="text" name="start" id="start" size="40"><button id='btnStart'>선택</button> </br>
+도착지 : <input type="text" name="goal" id="goal" size="40"><button id='btnGoal'>선택</button> </br>
+<button id='btnSearch'>경로탐색</button> </br>
+zoom : <div id='zoom'>???</div>
+<div id="map" style="width:100%;height:600px;">
+</div>
+<div id='message'>.....진행중.....</div>
+<div id='navi_result'></div>
+
+<!-- https://navermaps.github.io/maps.js.ncp/ -->
+<!-- https://navermaps.github.io/maps.js.ncp/docs/tutorial-2-Getting-Started.html -->
+<!-- https://navermaps.github.io/maps.js/docs/naver.maps.Event.html -->
+<!-- https://navermaps.github.io/maps.js.ncp/docs/naver.maps.Map.html-->
+<!-- https://apidocs.ncloud.com/ko/ai-naver/maps_directions/driving/ -->
+<script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=4x7btpvjs3&callback=map_load_complete"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"> </script>
+<script>
+    $('#btnStart').bind('click', function() {
+        console.log('start click');
+    });
+    $('#btnGoal').bind('click', function() {
+        console.log('goal click');
+    });
+    $('#btnSearch').bind('click', function() {
+        // navi_call();
+        direct5_call();
+    });
+
+    
+    // 지도생성
+    var map = new naver.maps.Map('map', {
+        // center: new naver.maps.LatLng(37.3646656, 127.108828),      // 현재위치정보로 표시
+        center: new naver.maps.LatLng(37.5247028, 126.9251289),      // 여의도
+        zoom: 15,
+        zoomControl: true,  
+        zoomControlOptions: {
+            style: naver.maps.ZoomControlStyle.SMALL,
+            position: naver.maps.Position.TOP_RIGHT
+        },
+    });
+
+
+    
+    // let option = 'trafas';   // 실시간 빠른길
+    // let option = 'tracomfort';  // 실시간 편한길
+    let option = 'traoptimal';  // 실시간 최적
+
+    
+    // 경로안내 라인
+    let polyline = new naver.maps.Polyline({
+        map: map,
+        path: [],
+        clickable: true,
+        strokeColor: '#e00400',
+        strokeStyle: 'long',
+        strokeOpacity: 0.5,
+        strokeWeight: 10
+    });
+              
+
+
+    // 경유지
+    // let waypoints_array = ['127.12345,37.12345', '128.12345,38.12345'];
+    let waypoints_array = [];
+
+    // 출발지 marker
+    let marker_start = undefined;
+    // 도착지 marker
+    let marker_goal = undefined;
+    // 회사 marker
+    let marker_companys = [];
+    // 경유지 marker
+    let marker_waypoints = [];
+
+
+
+    // click event
+    naver.maps.Event.addListener(map, 'click', (e) => {
+        console.log('click-e');
+        // layout popup 으로 출발지/도착지 선택
+        // layout popup 으로 출발지/도착지 선택
+        // layout popup 으로 출발지/도착지 선택
+        // layout popup 으로 출발지/도착지 선택
+        // layout popup 으로 출발지/도착지 선택
+
+        if(confirm('출발지 설정입니까??')) {
+            // e.preventDefault();
+            // marker create
+            marker_start = marker_start || createStartMarker(map);
+            // marker close (마커이동시 show/hide라 toggle로 발생함)
+            closeInfoWindow(marker_start['infoWindow']);
+            // 위치지정
+            marker_start.setPosition(e.coord);
+            
+            // polyline visiable 
+            setVisiablePloyline(false);
+
+            // {marker_start.getPosition()._lng},${marker_start.getPosition()._lat}
+            // $('#start').val(e.coord);
+            $('#start').val(`${e.coord._lng},${e.coord._lat}`);
+            return;
+        }
+        
+        if(confirm('도착지로 설정입니까??')) { 
+            // marker create
+            marker_goal = marker_goal || createGoalMarker(map);
+            // marker close (마커이동시 show/hide라 toggle로 발생함)
+            closeInfoWindow(marker_goal['infoWindow']);
+            // 위치지정
+            marker_goal.setPosition(e.coord);
+            
+            // polyline visiable 
+            setVisiablePloyline(false);
+
+
+
+            // $('#goal').val(e.coord);
+            $('#goal').val(`${e.coord._lng},${e.coord._lat}`);
+            return;
+        } 
+
+        
+        if(confirm('회사Marker 설정입니까??')) { 
+            // marker create
+            let marker = createCompanyMarker(map, e.coord);
+            // marker close (마커이동시 show/hide라 toggle로 발생함)
+            closeInfoWindow(marker['infoWindow']);
+            // 위치지정
+            // marker.setPosition(e.coord);
+            
+            console.log(`${e.coord._lng},${e.coord._lat}`);
+
+            return;
+        } 
+        
+        // if(confirm('경유지를 설정입니까??')) { 
+        //     // 경유지추가
+        //     waypoints_array.push([
+        //         new naver.maps.Marker({
+        //             position: e.coord,
+        //             map: map,
+        //         })
+        //     ]);
+        //     // marker_goal.setMap(map);
+        //     // marker_goal.setPosition(e.coord); 
+        //     return;
+        // } 
+    });
+
+
+    
+    /**
+     * zoom_changed Event
+     * */
+    naver.maps.Event.addListener(map, 'zoom_changed', function(zoom) {
+        $('#zoom').html(zoom);
+    });
+
+    /**
+     * bounds_changed Event
+     * */
+    naver.maps.Event.addListener(map, 'bounds_changed', function(bounds) {
+        // contentEl.find('.center').text(map.getCenterPoint());
+        console.log('Center: ' + bounds);
+        console.log('Center: ' + map.getBounds());
+        console.log('Center: ' + map.getCenter().toString() + ', Bounds: ' + bounds.toString());
+        $('#center').html(`Center:  ${map.getCenter().toString()} </br> Bounds: ${bounds.toString()} </br> CenterPoint:  ${map.getCenterPoint()}`);
+    }); 
+
+
+    /**
+     * idle Event
+     * */
+    naver.maps.Event.addListener(map, 'idle', function() {
+        // 회사Marker 제어
+        handleCompanyMarker(map);
+    });
+
+    function handleCompanyMarker(map) {
+        var mapBounds = map.getBounds();
+        for(let marker of marker_companys) {
+            let position = marker.getPosition();
+            if(mapBounds.hasLatLng(position)) {
+                // show
+                showMarker(map, marker);
+            }
+            else {
+                // hide
+                hideMarker(map, marker);
+            }
+        }
+    }
+
+    function showMarker(map, marker) {
+        if (marker.setMap()) return;
+        marker.setMap(map);
+    }
+    function hideMarker(map, marker) {
+        if (!marker.setMap()) return;
+        marker.setMap(null);
+    }
+    function setVisiablePloyline(b) {
+        polyline.setVisible(b);
+    }
+
+
+
+
+
+
+    /**
+    * callback function
+    */ 
+    function map_load_complete() {
+        $('#message').html('지도를 로드하였습니다.');
+    }
+
+    /**
+     * 출발지marker
+     * */
+    function createStartMarker(_map) {
+        // 출발지 marker
+        let marker = new naver.maps.Marker({
+            map: _map,
+            title : '출발',
+            // draggable: true,
+            size: new naver.maps.Size(38, 58),
+            anchor: new naver.maps.Point(19, 58),
+            zIndex: 100,
+            icon: {
+                url: 'https://ssl.pstatic.net/static/maps/m/pin_start.png', //50, 68 크기의 원본 이미지
+                size: new naver.maps.Size(36, 37),
+                scaledSize: new naver.maps.Size(36, 37),
+                origin: new naver.maps.Point(0, 0),
+                anchor: new naver.maps.Point(18, 19)
+            }
+            // 
+        });
+
+        
+        // let marker = new naver.maps.Marker({
+        //     position: new naver.maps.LatLng(37.3613962, 127.1112487),
+        //     map: null,
+        //     title: '출발',
+        //     icon: {
+        //         content: [
+        //             '<div style="background-color:red;">',
+        //                 '출발',
+        //             '</div>'
+        //         ].join(''),
+        //         size: new naver.maps.Size(38, 58),
+        //         anchor: new naver.maps.Point(19, 58),
+        //     },
+        //     draggable: true
+        // });
+        
+
+       
+        
+        // infoWindow 생성 및 추가
+        marker['infoWindow'] = new naver.maps.InfoWindow({
+            content: '<div style="width:150px;text-align:center;padding:10px;">The Letter is <b> start test </b>.</div>'
+        });
+
+        // mark이벤트추가
+        naver.maps.Event.addListener(marker, 'click', markerEventHandler(marker));
+
+        return marker;
+    }
+
+    /**
+     * 도착지Mark생성
+     * */
+    function createGoalMarker(_map) {
+        // 도착지 marker
+        let marker = new naver.maps.Marker({
+            map: _map,
+            title : '도착',
+            // draggable: true, 
+            size: new naver.maps.Size(38, 58),
+            anchor: new naver.maps.Point(19, 58),
+            zIndex: 100,
+            icon: {
+                url: 'https://ssl.pstatic.net/static/maps/m/pin_arrival.png', //50, 68 크기의 원본 이미지
+                size: new naver.maps.Size(36, 37),
+                scaledSize: new naver.maps.Size(36, 37),
+                origin: new naver.maps.Point(0, 0),
+                anchor: new naver.maps.Point(18, 19)
+            }
+        });
+        // let marker = new naver.maps.Marker({
+        //     position: new naver.maps.LatLng(37.3613962, 127.1112487),
+        //     map: null,
+        //     title: '도착',
+        //     icon: {
+        //         content: [
+        //             '<div style="background-color:red;">',
+        //                 '도착',
+        //             '</div>'
+        //         ].join(''),
+        //         size: new naver.maps.Size(38, 58),
+        //         anchor: new naver.maps.Point(19, 58),
+        //     },
+        //     draggable: true
+        // });
+        
+        // infoWindow 생성 및 추가
+        marker['infoWindow'] = new naver.maps.InfoWindow({
+            content: '<div style="width:150px;text-align:center;padding:10px;">The Letter is <b> goal test </b>.</div>'
+        });
+
+        // mark이벤트추가
+        naver.maps.Event.addListener(marker, 'click', markerEventHandler(marker));
+        
+        return marker;
+    }
+
+    /**
+     * Company Marker
+     * */
+    function createCompanyMarker(_map, position) {
+        let index = marker_companys.length;
+        let contentString = [
+            '<div class="iw_inner">',
+            '   <h3>XXX회사 index = ['+ index +']</h3>',
+            '   <p>서울특별시 중구 태평로1가 31 | 서울특별시 중구 세종대로 110 서울특별시청<br />',
+            '       02-120 | 공공,사회기관 &gt; 특별,광역시청<br />',
+            '       <a href="http://www.seoul.go.kr" target="_blank">www.seoul.go.kr/</a>',
+            '       <button id="btnWaypoint" onclick="addWayPoint('+position._lat+','+position._lng+')">경유지설정</button> </br>',
+            '   </p>',
+            '</div>'
+        ].join('');
+
+                
+        let infowindow = new naver.maps.InfoWindow({
+            content: contentString,
+            maxWidth: 300,
+            backgroundColor: "#eee",
+            borderColor: "#2db400",
+            borderWidth: 5,
+            anchorSize: new naver.maps.Size(30, 30),
+            anchorSkew: true,
+            anchorColor: "#eee",
+            pixelOffset: new naver.maps.Point(20, -20)
+        });
+
+        
+        let marker = new naver.maps.Marker({
+            position: position,
+            map: _map,
+            // title : '도착',
+            // draggable: true, 
+            // size: new naver.maps.Size(38, 58),
+            // anchor: new naver.maps.Point(19, 58),
+        });
+
+        // console.log($("#waypoint_"+ index) );
+        
+        
+        // infoWindow 생성 및 추가
+        marker['infoWindow'] = infowindow;
+
+        // mark이벤트추가
+        naver.maps.Event.addListener(marker, 'click', markerEventHandler(marker));
+
+        // 추가
+        marker_companys.push(marker);
+
+        return marker;
+    }
+
+    /**
+     * marker를 Click시 InfoWindow는 toggle로 show/hide를 반복하며,
+     * 다른 marker의 InfoWindow는 hide처리된다.
+     * */
+     function markerEventHandler(marker) {
+        return function(e)  {
+            console.log(`call -- ${marker._nmarker_id}`);
+            let infoWindow = marker['infoWindow'];
+            if(!infoWindow) {
+                return;
+            }
+    
+            if(infoWindow.getMap()) {
+                // infoWindow.close();
+                closeInfoWindow(infoWindow);
+            }
+            else {
+                infoWindow.open(map, marker)
+            }
+        }
+    }
+
+    /**
+     * InfoWindow close
+     * */
+    function closeInfoWindow(infoWindow) {
+        if(!infoWindow) {
+            return;
+        }
+
+        if(infoWindow.getMap()) {
+            infoWindow.close();
+        }
+    }
+    /**
+     * Add WayPoint
+     * */
+    function addWayPoint(lat, lng) {
+        // polyline visiable 
+        setVisiablePloyline(false);
+        // add waypoint
+        marker_waypoints.push(`${lng},${lat}`);
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * ployline 주위의 marker 보여주기
+     */
+     function testVisiableMarker() {
+        let paths = polyline.getPath();
+        if(!paths) {
+            return;
+        }
+
+        let markers = marker_companys.slice();
+        let showMarker = {}
+        for(let path of paths.getArray()) {
+            for(let marker of markers) {
+                // 적용된건은 skip처리
+                if(showMarker[marker._nmarker_id]) {
+                    continue;
+                }
+
+                // 거리계산
+                let distince = map.getProjection().getDistance(path, marker.getPosition());   // 단위 meter 
+                if(distince <= 500 )   {   // 1km이내
+                    marker.setVisible(true);
+                    
+                    // 활성화 marker
+                    showMarker[marker._nmarker_id] = marker;
+                }
+                else {
+                    marker.setVisible(false);
+                }
+            }
+        }
+    }
+
+
+
+    /**
+     * 현재위치에 랜덤으로 marker 생성
+     * */
+    function testMarkerCreate() {
+        // 여기부터 해보자...
+        // 여기부터 해보자...
+        // 여기부터 해보자...
+        // 여기부터 해보자...
+        // 여기부터 해보자...
+        var testdata = [
+            new naver.maps.LatLng(37.5241242, 126.9174256),  // kbs본관
+            new naver.maps.LatLng(37.5217842, 126.9205048),  // 전경련회관
+            new naver.maps.LatLng(37.51961, 126.9237181),    // 윤중초등학교
+            new naver.maps.LatLng(37.5187144, 126.9252872),  // 미성아파트입구
+            new naver.maps.LatLng(37.5199855, 126.9276569),  //sk증권빌딩
+            new naver.maps.LatLng(37.5195143, 126.9295639),  // 서울프라임치과의원
+            new naver.maps.LatLng(37.5190122, 126.9318492),  // 우당약국
+            new naver.maps.LatLng(37.5246709, 126.9249505),  // IFC몰주차장입구
+            new naver.maps.LatLng(37.5228074, 126.9279734),  // 증권거래소
+            new naver.maps.LatLng(37.5244816, 126.9348613),  // 여의도중학교정문
+            new naver.maps.LatLng(37.5235009, 126.9331554),  // 세븐일레븐
+            new naver.maps.LatLng(37.5279851, 126.9292501),  // LG트윈타워
+            new naver.maps.LatLng(37.5201759, 126.9066324),
+            // new naver.maps.LatLng(),
+            // new naver.maps.LatLng(),
+            // new naver.maps.LatLng(),
+        ]
+
+        for(let latlng of testdata) {
+            let marker = createCompanyMarker(map, latlng);
+            // marker close (마커이동시 show/hide라 toggle로 발생함)
+            // closeInfoWindow(marker['infoWindow']);
+        }
+        
+    }
+
+
+    function direct5_call() {
+
+        if(!marker_start || !marker_goal) {
+            alert('경로를 설정하여 주십시오.');
+            return;
+        }
+
+        $.ajax({
+            type: 'post',
+            dataType:'json',
+            contentType : 'application/json; charset=utf-8',
+            // url: `http://127.0.0.1:5500/navermap/direction5?start=${marker_start.getPosition()._lng},${marker_start.getPosition()._lat}&goal=${marker_goal.getPosition()._lng},${marker_goal.getPosition()._lat}&option=${option}&waypoints=${marker_waypoints.join('|')}`,
+            url: `http://127.0.0.1:5500/navermap/direction5`,
+            data : JSON.stringify({
+                'start' : `${marker_start.getPosition()._lng},${marker_start.getPosition()._lat}`,
+                'goal' : `${marker_goal.getPosition()._lng},${marker_goal.getPosition()._lat}`,
+                'option' : `${option}`,
+                'waypoints' : `${marker_waypoints.join('|')}`,
+            }),
+            success:function(data) {
+                // data = JSON.parse(data)
+                // 결과메세지 입력
+                $('#message').html( data.message );
+                if(data.code != 0) {
+                    return;
+                }
+
+                let guide_array = (data.route.traoptimal[0]).guide;
+                let path_array = (data.route.traoptimal[0]).path;
+                let section_array = (data.route.traoptimal[0]).section;
+                let summary_data = (data.route.traoptimal[0]).summary;
+                
+                // 중심지이동
+                // map.setCenter(new naver.maps.LatLng(37.3595953, 127.1053971)); 
+                // 경로그리기
+                polyline.setPath( path_array );
+                
+                // polyline visiable 
+                setVisiablePloyline(true);
+                
+                // 근처회사 marker
+                testMarkerCreate();
+                testVisiableMarker();
+
+                // duration: 499724 ms
+                $('#navi_result').html(
+                    `거리 : ${Math.trunc( summary_data.distance / 1000)}.${Math.trunc( summary_data.distance % 1000 / 10)} KM </br>
+                    시간 : ${Math.trunc( Math.round( summary_data.duration / 60000) )}분  </br>
+                    주유비 : ${summary_data.fuelPrice}원 </br>
+                    택시비 : ${summary_data.taxiFare}원  </br>
+                    `
+                );
+                
+            }
+        }); 
+    }
+</script>
+</body>
+</html>
+
+
+
