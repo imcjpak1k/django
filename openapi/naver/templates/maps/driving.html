@@ -51,8 +51,8 @@ zoom : <div id='zoom'>???</div>
 <!-- https://apidocs.ncloud.com/ko/ai-naver/maps_directions/driving/ -->
 <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=4x7btpvjs3&callback=map_load_complete"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"> </script>
-<script type="text/javascript" src="../static/js/MarkerClustering.js"> </script>
-<script type="text/javascript" src="../static/data/accidentdeath.js"></script>
+<script type="text/javascript" src="/static/js/MarkerClustering.js"> </script>
+<script type="text/javascript" src="/static/data/accidentdeath.js"></script>
 
 <script>
     // 지도생성
@@ -164,27 +164,27 @@ zoom : <div id='zoom'>???</div>
         }
 
         let htmlMarker1 = {
-                content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(../static/images/cluster-marker-1.png);background-size:contain;"></div>',
+                content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(/static/images/cluster-marker-1.png);background-size:contain;"></div>',
                 size: N.Size(40, 40),
                 anchor: N.Point(20, 20)
             },
             htmlMarker2 = {
-                content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(../static/images/cluster-marker-2.png);background-size:contain;"></div>',
+                content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(/static/images/cluster-marker-2.png);background-size:contain;"></div>',
                 size: N.Size(40, 40),
                 anchor: N.Point(20, 20)
             },
             htmlMarker3 = {
-                content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(../static/images/cluster-marker-3.png);background-size:contain;"></div>',
+                content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(/static/images/cluster-marker-3.png);background-size:contain;"></div>',
                 size: N.Size(40, 40),
                 anchor: N.Point(20, 20)
             },
             htmlMarker4 = {
-                content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(../static/images/cluster-marker-4.png);background-size:contain;"></div>',
+                content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(/static/images/cluster-marker-4.png);background-size:contain;"></div>',
                 size: N.Size(40, 40),
                 anchor: N.Point(20, 20)
             },
             htmlMarker5 = {
-                content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(../static/images/cluster-marker-5.png);background-size:contain;"></div>',
+                content: '<div style="cursor:pointer;width:40px;height:40px;line-height:42px;font-size:10px;color:white;text-align:center;font-weight:bold;background:url(/static/images/cluster-marker-5.png);background-size:contain;"></div>',
                 size: N.Size(40, 40),
                 anchor: N.Point(20, 20)
             };
@@ -220,14 +220,13 @@ zoom : <div id='zoom'>???</div>
     
     /**
      * ployline 주위의 marker 보여주기
-     */
      const showPolylineBoundMarker = () => {
-    //  const testVisiableMarker() {
-        let paths = polyline.getPath();
-        if(!paths) {
+         //  const testVisiableMarker() {
+             let paths = polyline.getPath();
+             if(!paths) {
             return;
         }
-
+        
         let markers = marker_companys.slice();
         let showMarker = {}
         for(let path of paths.getArray()) {
@@ -251,8 +250,68 @@ zoom : <div id='zoom'>???</div>
             }
         }
     }
+       */
 
 
+    /**
+     * ployline 주위의 marker 보여주며 clustering 처리
+     */
+     const showPolylineBoundMarker = (isCluster= false) => {
+        let paths = polyline.getPath();
+        if(!paths) {
+            return;
+        }
+
+        let targetMarkers = [];
+        let showMarkers = [];
+        // let showMarkers = {};
+
+        // 화면에 위치하지 않는 마커는 숨김(비대상)
+        let mapBounds = map.getBounds();
+        for(let marker of marker_companys.slice()) {
+            if(mapBounds.hasLatLng(marker.getPosition())) {
+                targetMarkers.push( marker );
+            }  
+            else {
+                // 숨김처리
+                marker.setVisible(false);
+            }
+        } // end of for
+
+        
+        // 경로상에 있는 marker show/hide
+        for(let path of paths.getArray()) {
+            // 복사
+            let markers = targetMarkers.slice();
+            targetMarkers = [];
+            for(let marker of markers) {
+                // if(showMarkers[marker._nmarker_id]) {
+                //     continue;
+                // }
+
+                // 거리계산
+                let distince = map.getProjection().getDistance(path, marker.getPosition());   // 단위 meter 
+                if(distince <= 3000 )   {   // 3km이내
+                    // // flag append
+                    // showMarkers[marker._nmarker_id] = marker;
+                    
+                    marker.setVisible(true);
+                    showMarkers.push(marker);
+                }
+                else {
+                    marker.setVisible(false);
+                    targetMarkers.push( marker );
+                }
+            } // end of for(markers)
+        } // end of for(paths)
+
+        if(markerClustering) {
+            // clustering marker 적용
+           markerClustering.markers = showMarkers;
+           // 지도를 다시그려봅시다.
+           map.refresh();
+        }
+    }
 
 
     /**
@@ -448,9 +507,9 @@ zoom : <div id='zoom'>???</div>
         // 17에서 시작하자
         map.setZoom( 17 );
 
-        // let pointBounds = new naver.maps.PointBounds.bounds(marker_start.getPosition(), marker_goal.getPosition());
+        // polyline의 bounds
         let pointBounds = naver.maps.PointBounds.bounds.apply(null, polyline.getPath().getArray());
-        // 중심값적용
+        // polyline의 중심값적용
         map.setCenter(pointBounds.getCenter());
         
         // marker가 화면에 보일때까지 zoom처리
@@ -475,6 +534,7 @@ zoom : <div id='zoom'>???</div>
          * */
         naver.maps.Event.addListener(map, 'zoom_changed', function(zoom) {
             $('#zoom').html(zoom);
+            console.log('marker는 zoom에 따라서 show/hide 처리해야 하는가?????')
         });
 
         /**
@@ -504,6 +564,15 @@ zoom : <div id='zoom'>???</div>
             searchCoordinateToAddress(e.coord);
         });
 
+
+
+
+
+        // 버튼이벤트
+        // 버튼이벤트
+        // 버튼이벤트
+        // 버튼이벤트
+        // 버튼이벤트
         $('#address').on('keydown', function(e) {
             var keyCode = e.which;
 
@@ -609,14 +678,10 @@ zoom : <div id='zoom'>???</div>
 
         
         $.ajax({
-            type: 'post',
+            type: 'get',
             dataType:'json',
             contentType : 'application/json; charset=utf-8',
-            url: `http://127.0.0.1:5500/navermap/reversegeocode`,
-            data : JSON.stringify({
-                coords: `${latlng._lng},${latlng._lat}`,
-                orders: 'legalcode,admcode,addr,roadaddr'       //'addr,roadaddr'         //'admcode'
-            }),
+            url: `/naver/maps/reversegeocode/${latlng._lng},${latlng._lat}/legalcode,admcode,addr,roadaddr`,
             success:function(data) {
                 let htmlAddresses = [];
                 if(data.status.code != 0) {
@@ -668,13 +733,11 @@ zoom : <div id='zoom'>???</div>
         closeInfoWindow(mapInfoWindow);
         
         $.ajax({
-            type: 'post',
+            type: 'get',
             dataType:'json',
             contentType : 'application/json; charset=utf-8',
-            url: `http://127.0.0.1:5500/navermap/geocode`,
-            data : JSON.stringify({
-                query: address
-            }),
+            url: '/naver/maps/geocode',
+            url: `/naver/maps/geocode/${address}`,
             success:function(data) {
                 if(data.errorMessage) {
                     alert(`error : ${data.errorMessage}` )
@@ -761,18 +824,13 @@ zoom : <div id='zoom'>???</div>
             return;
         }
 
-        
+        let waypoints = marker_waypoints.join('|');
+        let option = $('#option').val();
         $.ajax({
-            type: 'post',
+            type: 'get',
             dataType:'json',
             contentType : 'application/json; charset=utf-8',
-            url: `http://127.0.0.1:5500/navermap/direction5`,
-            data : JSON.stringify({
-                'start' : `${marker_start.getPosition()._lng},${marker_start.getPosition()._lat}`,
-                'goal' : `${marker_goal.getPosition()._lng},${marker_goal.getPosition()._lat}`,
-                'option' : $('#option').val(),
-                'waypoints' : `${marker_waypoints.join('|')}`,
-            }),
+            url: `/naver/maps/driving/${marker_start.getPosition()._lng},${marker_start.getPosition()._lat}/${waypoints || ' '}/${marker_goal.getPosition()._lng},${marker_goal.getPosition()._lat}/${option}`,
             success:function(data) {
                 // 결과메세지 입력
                 $('#message').html( data.message );
@@ -811,10 +869,12 @@ zoom : <div id='zoom'>???</div>
                     timestr = `${hour}초 `;
                 }
 
-                    // 시간 : ${Math.trunc( Math.round( summary_data.duration / (1000 * 60)) )}분  </br>
+                // 시간 : ${Math.trunc( Math.round( summary_data.duration / (1000 * 60)) )}분  </br>
                 hideMakterCluster();
                 // 근처회사 marker
-                showPolylineBoundMarker();                // duration: 499724 ms
+                showPolylineBoundMarker(true);                // duration: 499724 ms
+                // 다시 보여주자
+                showMakterCluster();
                 $('#navi_result').html(
                     `거리 : ${Math.trunc( summary_data.distance / 1000)}.${Math.trunc( summary_data.distance % 1000 / 10)} KM </br>
                     시간 : ${timestr}  </br>

@@ -1,49 +1,11 @@
 from django.shortcuts import render
 from django.http import request, HttpResponse 
+from django.http import JsonResponse
 # from django.views import generic
-
-
 import requests
 import re
 
 from openapi.settings import OPEN_API_AUTHORIZATION
-
-
-def requests_call(url=None, params=None, method='get', etc_headers=None, **kwargs):
-    """
-    openapi call
-    """
-
-    if(not url): return {}
-
-    # OPEN_API_AUTHORIZATION['MAVER']
-    
-    # headers
-    headers = {
-        'X-NCP-APIGW-API-KEY-ID': OPEN_API_AUTHORIZATION['NAVER']['X-NCP-APIGW-API-KEY-ID'],
-        'X-NCP-APIGW-API-KEY':  OPEN_API_AUTHORIZATION['NAVER']['X-NCP-APIGW-API-KEY'],
-    }
-
-    # 기타해드값 추가 
-    if(etc_headers): 
-        headers.update(etc_headers)
-
-    # https://requests.readthedocs.io/en/master/
-    request = getattr(requests, method)
-    response = request(url, params=params, headers=headers, **kwargs)
-    
-    status_code = response.status_code
-    encoding = response.encoding 
-
-    if(status_code != requests.codes.ok): return {}
-
-    content_type = response.headers['Content-Type']
-
-    regex = re.compile("[^\w]*json[^\w]*")
-    return response.json() if(not regex.search(content_type)) else response.content.decode(encoding)
-    # return response.json() if(content_type.find('json') != -1) else response.content.decode(encoding)
-
-
 
 # Create your views here.
 def index(request):   
@@ -69,4 +31,125 @@ def direction(request):
 
 def navi(request):
     context = None
-    return render(request, 'maps/navi.html', context)
+    return render(request, 'maps/driving.html', context)
+
+
+def geocode(request, query):
+    """
+    주소로 지리정보 검색
+    """
+    print("주소로 주소정보 조회")
+
+    return JsonResponse(
+        http_request(
+            url='https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode',
+            params={
+                'query': query,  # 주소
+                'coordinate': None,                   # 중심좌표
+            },
+        )
+    )
+
+
+def reversegeocode(request, coords, orders):
+    """
+    좌표로 지리정보 검색
+    """
+    print("좌표로 지리정보 검색")
+
+    return JsonResponse(
+        http_request(
+            url='https://naveropenapi.apigw.ntruss.com/map-reversegeocode/v2/gc',
+            params={
+                'coords': coords,           # 입력_좌표
+                'orders': orders,           # 변환_작업_이름
+                'sourcecrs': '',            # 좌표계
+                'output': 'json',           # 출력_형식
+            },
+        )
+    )
+
+
+def driving(request, start, waypoints, goal, option):
+    """
+    경로탐색(Direction5)
+    """
+    print("경로탐색")
+
+    return JsonResponse(
+        http_request(
+            url='https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving',
+            params={
+                'start': start,
+                'goal': goal,
+                'option': option,
+                'waypoints': waypoints if(not waypoints) else '',
+            },
+        )
+    )
+
+
+
+# @this.route('/direction5', methods=['POST'])
+# def direction5():
+#     """
+#     map direction5
+#     """
+#     logger.debug("Map Direction5")
+#     json_data   = request.get_json(silent=True, cache=False, force=True)
+
+#     return http_request(
+#         url='https://naveropenapi.apigw.ntruss.com/map-direction/v1/driving',
+#         params={
+#             'start': json_data.get('start'),
+#             'goal': json_data.get('goal'),
+#             'option': json_data.get('option'),
+#             'waypoints': json_data.get('waypoints'),
+#         },  
+#     )
+
+
+
+
+def http_request(url=None, params=None, method='get', etc_headers=None, **kwargs):
+    """
+    openapi call
+    """
+
+    
+    # print("url {url}".format(url=url))
+    # print('method : '+ method)
+    # print(params)
+    # print("X-NCP-APIGW-API-KEY-ID {id}".format(id=OPEN_API_AUTHORIZATION['NAVER']['X-NCP-APIGW-API-KEY-ID']))
+    # print("X-NCP-APIGW-API-KEY {key}".format(key=OPEN_API_AUTHORIZATION['NAVER']['X-NCP-APIGW-API-KEY']))
+
+    if(not url): return {}
+    
+    # headers
+    headers = {
+        'X-NCP-APIGW-API-KEY-ID': OPEN_API_AUTHORIZATION['NAVER']['X-NCP-APIGW-API-KEY-ID'],
+        'X-NCP-APIGW-API-KEY':  OPEN_API_AUTHORIZATION['NAVER']['X-NCP-APIGW-API-KEY'],
+    }
+
+    # 기타해드값 추가 
+    if(etc_headers): 
+        headers.update(etc_headers)
+
+    # https://requests.readthedocs.io/en/master/
+    request = getattr(requests, method)
+    response = request(url, params=params, headers=headers, **kwargs)
+    
+    status_code = response.status_code
+    encoding = response.encoding 
+
+    # print('status_code {status_code}'.format(status_code=status_code))
+    # print('encoding {encoding}'.format(encoding=encoding))
+
+    if(status_code != requests.codes.ok): return {}
+
+    content_type = response.headers['Content-Type']
+    print('content_type {content_type}'.format(content_type=content_type))
+
+    regex = re.compile("[^\w]*json[^\w]*")
+    # print(regex' if(regex.search(content_type)) else 'contents')
+    return response.json() if(regex.search(content_type)) else response.content.decode(encoding)
