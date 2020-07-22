@@ -4,11 +4,16 @@ from django.http import JsonResponse
 # from django.views import generic
 import requests
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 from openapi.settings import OPEN_API_AUTHORIZATION
 
+
 # Create your views here.
 def index(request):   
+    logger.debug('naver openpai view index')
     return HttpResponse("Hello wrold. You're at the polls index.")    
 
 
@@ -22,14 +27,17 @@ def index(request):
 #     template_name = 'maps/navi.html'
 
 def clustering(request):
+    logger.debug('clustering 페이지이동')
     context = None
     return render(request, 'maps/clustering.html', context)
 
 def direction(request):
+    logger.debug('direction 페이지이동')
     context = None
     return render(request, 'maps/direction.html', context)
 
 def navi(request):
+    logger.debug('navi 페이지이동')
     context = None
     return render(request, 'maps/driving.html', context)
 

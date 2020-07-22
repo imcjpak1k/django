@@ -131,3 +131,52 @@ OPEN_API_AUTHORIZATION = {
         'X-NCP-APIGW-API-KEY': 'client security key',
     },
 }
+
+# logging
+LOGGING = {
+    'version': 1,
+    
+    # 기존의 로깅 설정을 비활성화 할 것인가?
+    'disable_existing_loggers': False,
+
+    'formatters': {
+        'format1': {
+            'format': '[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s', 
+            'datefmt': '%d/%b/%Y %H:%M:%S'
+        },
+        'format2': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+
+    'handlers': {
+        # 로그 파일을 만들어 텍스트로 로그레코드 저장
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs/logfile'),
+            'formatter': 'format1',
+        },
+        # 콘솔(터미널)에 출력
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'format2',
+        }
+    },
+
+    # 대상 APP 지정
+    'loggers': {
+        'naver': {
+            # handlers에 정의된 handler입력
+            'handlers': ['console', 'file'],
+            # 로그레벨
+            'level': 'DEBUG',
+        },
+        # 'books': {
+        #     'handlers': ['console'],
+        #     'level': 'DEBUG',
+        # }
+    },
+
+}
