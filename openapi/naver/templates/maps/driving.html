@@ -57,8 +57,10 @@ zoom : <div id='zoom'>???</div>
 <script>
     // 지도생성
     var map = new naver.maps.Map('map', {
-        // center: new naver.maps.LatLng(37.3646656, 127.108828),      // 현재위치정보로 표시
-        center: new naver.maps.LatLng(37.5247028, 126.9251289),      // 여의도
+        center: new naver.maps.LatLng(37.3646656, 127.108828),      // 현재위치정보로 표시
+        // center: new naver.maps.LatLng(35.2220132, 126.6396139),      // 여의도
+        // center: naver.maps.UTMK.fromUTMKToLatLng(new naver.maps.Point(921700, 1692188)),     // 한국전기설계감리단 , 충남 서산시 율지2로 10, 1층
+        // center: naver.maps.UTMK.fromUTMKToLatLng(new naver.maps.Point(930132, 1942308)),     // 주)CIM시스템, 인천 부평구 경인로 759번길 3
         zoom: 15,
         zoomControl: true,  
         zoomControlOptions: {
@@ -321,10 +323,46 @@ zoom : <div id='zoom'>???</div>
         $('#message').html('지도를 로드하였습니다.');
     }
 
+    /*
+    testCreateUtmkMarker(921700, 1692188);  // 파아란잔디영농조합법인 / 전남 장성군 삼서면 해삼로 995, 1층
+    testCreateUtmkMarker(924136, 1841144);  // 대광포장건설 / 충남 홍성군 구항면 충서로 996번길 41-29
+    testCreateUtmkMarker(929001, 1773508);  // 대한예수교장로회군장교회 / 전북 군산시 지곡동 556-1
+    testCreateUtmkMarker(929157, 1925023);  // 세명테크 / 경기 시흥시 엠티브이북로 193번길 8
+    testCreateUtmkMarker(929758, 1935104);  // 미성산업기계 / 인천 남동구 함박뫼로 377번길 24-10, 남동공단 42동 1호(남촌동)
+    testCreateUtmkMarker(929782, 1938635);  // 세무법인충무 / 인천 남동구 남동대로 691번길 8(구월동)
+    testCreateUtmkMarker(930132, 1942308);  // CIM시스템  / 인천광역시 부평구 경인로759번길 3
+    testCreateUtmkMarker(930259, 1925831);  // 태광엔지니어링 / 경기도 시흥시 공단2대로 175, 609호
+    testCreateUtmkMarker(941813, 1952088);  // 다래씨엔엔주식회사 / 서울 강서구 460, 603호 (등촌동, 평안빌딩)
+    testCreateUtmkMarker(948912, 1933537);  // 혜원빌딩 / 경기 안양시 만안구 장내로 149번길 33
+    testCreateUtmkMarker(940681, 1923513);  // 다인홀딩스 / 경기 안산시 단원구 광덕대로 138, 6층 603호
+    testCreateUtmkMarker(947237, 1947732);  // 동양피앤드피 / 서울 영등포구 영신로 219, 12층 1201호
+    testCreateUtmkMarker(948703, 1947849);  // 강경화 / 서울 영등포구 국회대로 66길 17, 201호
+    testCreateUtmkMarker(956142, 1922050);  // 대인운수합자 / 경기 수원시 장안구 송죽동 395-14번지
+
+    let [x,y] = [929782, 1938635];
+    let latlng = naver.maps.UTMK.fromUTMKToLatLng(new naver.maps.Point(x, y));
+    createMarker(map, {type:'company', position:latlng});
+     */
+    const testCreateUtmkMarker = (x,y) => {
+        // TEST CODE
+        // TEST CODE
+        // TEST CODE
+        // TEST CODE
+        // UTMK 
+        // UTMK 좌표를 위/경도 좌표로 변환
+        let latlng = naver.maps.UTMK.fromUTMKToLatLng(new naver.maps.Point(x, y));
+        // marker생성
+        createMarker(map, {type:'company', position:latlng});
+        // 중심지이동
+        map.setCenter(latlng); 
+        // 주소조회
+        searchCoordinateToAddress(latlng)
+    }
+
     /**
      * Marker 생성
      */
-    const fnc_create_marker = (_map, markerOpt={title:'', type:undefined, position:undefined, draggable:false}) => {
+    const createMarker = (_map, markerOpt={title:'', type:undefined, position:undefined, draggable:false}) => {
         if(!_map) {
             alert('map객체가 존재하지 않습니다. [');
             console.log(this.name);
@@ -598,7 +636,7 @@ zoom : <div id='zoom'>???</div>
             let latlng = mapInfoWindow.getPosition();
             // marker create
             // marker_start = marker_start || createStartMarker(map);
-            marker_start = marker_start || fnc_create_marker(map, {title:'출발', type:'start', position:latlng});
+            marker_start = marker_start || createMarker(map, {title:'출발', type:'start', position:latlng});
             // marker close (마커이동시 show/hide라 toggle로 발생함)
             closeInfoWindow(marker_start['infoWindow']);
             // 위치지정 또는 이동
@@ -620,7 +658,7 @@ zoom : <div id='zoom'>???</div>
             // 위경동
             let latlng = mapInfoWindow.getPosition();
             // marker create
-            marker_goal = marker_goal || fnc_create_marker(map, {title:'도착', type:'goal', position:latlng});
+            marker_goal = marker_goal || createMarker(map, {title:'도착', type:'goal', position:latlng});
             // marker close (마커이동시 show/hide라 toggle로 발생함)
             closeInfoWindow(marker_goal['infoWindow']);
             // 위치지정
@@ -718,7 +756,7 @@ zoom : <div id='zoom'>???</div>
                 mapInfoWindow.setContent([
                     '<div style="padding:10px;min-width:200px;line-height:150%;">',
                     '<h4">좌표로 주소검색</h4><br />',
-                    `<h5">new naver.maps.LatLng(${latlng._lat},${latlng._lng}),</h5><br />`,
+                    `<h5">new naver.maps.LatLng(${latlng._lng}, ${latlng._lat}),</h5><br />`,
                     htmlAddresses.join('<br />'),
                     '<br/>',
                     '<button onClick="closeInfoWindow(mapInfoWindow);">닫기</button>',
@@ -798,7 +836,7 @@ zoom : <div id='zoom'>???</div>
         let data = accidentDeath.searchResult.accidentDeath;
         for (var i = 0, ii = data.length; i < ii; i++) {
             let spot = data[i];
-            fnc_create_marker(map, {type:'company', position: new naver.maps.LatLng(spot.grd_la, spot.grd_lo)});
+            createMarker(map, {type:'company', position: new naver.maps.LatLng(spot.grd_la, spot.grd_lo)});
             // var spot = data[i],
             //     latlng = new naver.maps.LatLng(spot.grd_la, spot.grd_lo),
             //     marker = new naver.maps.Marker({
