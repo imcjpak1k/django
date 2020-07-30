@@ -506,6 +506,46 @@ zoom : <div id='zoom'>???</div>
         map.setZoom(map.getZoom() - 1); // 축소
      }
 
+     /**
+      * waypoint 자동정렬
+      * 출발지에서 제일 가까운 경유지검색 후 
+      * 검색결과 경유지에서 가까운 경유지를 검색하는 방법으로 반복함
+      * */
+     const waypoint_sort = (baseLatLng, waypoints) => {
+        console.log('>>>>', waypoints.length)
+        let returnArray = [];
+        if(!waypoints || waypoints.length == 0) {
+            return returnArray;
+        }
+
+        let sortedArray = waypoints.map((data, index) => {
+                    let [lat, lng] = data.split(',');
+                    let targetLatlng = new naver.maps.LatLng(lat, lng);
+                    // 기준좌표에서 대상좌표까지의 거리계산
+                    let distince = map.getProjection().getDistance(baseLatLng, targetLatlng);   // 단위 meter 
+                    // 문자열로 sort하기 때문에 고정길이(10자리+n)로 변경
+                    let distinceArr = `0000000000${Math.trunc(distince)}`.split('');
+                    let distinceStr = distinceArr.splice(distinceArr.length - 10, distinceArr.length).join('');
+                    console.log(`${distinceStr}>>${data}`);
+                    return `${distinceStr}>>${data}`;
+                    // return `${distinceStr}>>${lng},${lat}`;
+                })
+                .sort() // 정렬
+                .map((data, index) => {
+                    // 거리를 뺀 좌표정보만 반환
+                    return data.split('>>')[1];
+                });
+                
+        // 추가
+        let latlng = sortedArray.splice(0,1)[0];
+        let [lat, lng] = latlng.split(',');
+        returnArray.push( `${lng},${lat}` );
+
+        if(sortedArray.length == 0) {
+            return returnArray;
+        }
+        return returnArray.concat( waypoint_sort(new naver.maps.LatLng(lat, lng), sortedArray) );
+    };
 
 
 
@@ -829,24 +869,27 @@ zoom : <div id='zoom'>???</div>
         // let waypoints ='';
         // let waypoints = marker_waypoints.join('|');
         
-        let waypoints = marker_waypoints.map((data, index) => {
-                            let baseLatlng = marker_start.getPosition();
-                            let [lat, lng] = data.split(',');
-                            let targetLatlng = new naver.maps.LatLng(lat, lng);
-                            // 기준좌표에서 대상좌표까지의 거리계산
-                            let distince = map.getProjection().getDistance(baseLatlng, targetLatlng);   // 단위 meter 
-                            // 문자열로 sort하기 때문에 고정길이(10자리+n)로 변경
-                            let distinceArr = `0000000000${distince}`.split('');
-                            let distinceStr = distinceArr.splice(distinceArr.length - 10, distinceArr.length);
-                            // return `${distince}:${data}`;
-                            return `${distinceStr}>>${lng},${lat}`;
-                        })
-                        .sort() // 정렬
-                        .map((data, index) => {
-                            // 거리를 뺀 좌표정보만 반환
-                            return data.split('>>')[1];
-                        })
-                        .join('|');
+        // let waypoints = marker_waypoints.map((data, index) => {
+        //                     let baseLatlng = marker_start.getPosition();
+        //                     let [lat, lng] = data.split(',');
+        //                     let targetLatlng = new naver.maps.LatLng(lat, lng);
+        //                     // 기준좌표에서 대상좌표까지의 거리계산
+        //                     let distince = map.getProjection().getDistance(baseLatlng, targetLatlng);   // 단위 meter 
+        //                     // 문자열로 sort하기 때문에 고정길이(10자리+n)로 변경
+        //                     let distinceArr = `0000000000${distince}`.split('');
+        //                     let distinceStr = distinceArr.splice(distinceArr.length - 10, distinceArr.length);
+        //                     // return `${distince}:${data}`;
+        //                     return `${distinceStr}>>${lng},${lat}`;
+        //                 })
+        //                 .sort() // 정렬
+        //                 .map((data, index) => {
+        //                     // 거리를 뺀 좌표정보만 반환
+        //                     return data.split('>>')[1];
+        //                 })
+        //                 .join('|');
+        
+        // 경유지 정렬
+        let waypoints = waypoint_sort(marker_start.getPosition(), marker_waypoints).join('|');
 
         $.ajax({
             type: 'get',
