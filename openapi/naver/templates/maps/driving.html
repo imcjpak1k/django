@@ -57,8 +57,8 @@ zoom : <div id='zoom'>???</div>
 <script>
     // 지도생성
     var map = new naver.maps.Map('map', {
-        center: new naver.maps.LatLng(37.3646656, 127.108828),      // 현재위치정보로 표시
-        // center: new naver.maps.LatLng(35.2220132, 126.6396139),      // 여의도
+        // center: new naver.maps.LatLng(37.3646656, 127.108828),      // 현재위치정보로 표시
+        center: new naver.maps.LatLng(37.527037, 126.9300006),      // 여의도
         // center: naver.maps.UTMK.fromUTMKToLatLng(new naver.maps.Point(921700, 1692188)),     // 한국전기설계감리단 , 충남 서산시 율지2로 10, 1층
         // center: naver.maps.UTMK.fromUTMKToLatLng(new naver.maps.Point(930132, 1942308)),     // 주)CIM시스템, 인천 부평구 경인로 759번길 3
         zoom: 15,
@@ -74,10 +74,13 @@ zoom : <div id='zoom'>???</div>
         map: map,
         path: [],
         clickable: true,
-        strokeColor: '#e00400',
-        strokeStyle: 'long',
-        strokeOpacity: 0.5,
-        strokeWeight: 10
+        visible: true,
+        strokeColor: '#00CC33',
+        strokeStyle: 'solid',    //'long',
+        strokeLineCap: 'round',
+        strokeLineJoin: 'round',
+        strokeOpacity: 1,
+        strokeWeight: 6,
     });
     
     // 위치정보
@@ -101,35 +104,6 @@ zoom : <div id='zoom'>???</div>
     // 경유지 marker
     let marker_waypoints = [];
 
-
-    
-    // /**
-    //  * zoom_changed Event
-    //  * */
-    // naver.maps.Event.addListener(map, 'zoom_changed', function(zoom) {
-    //     $('#zoom').html(zoom);
-    // });
-
-    // /**
-    //  * bounds_changed Event
-    //  * */
-    // naver.maps.Event.addListener(map, 'bounds_changed', function(bounds) {
-    //     // contentEl.find('.center').text(map.getCenterPoint());
-    //     // console.log('Center: ' + bounds);
-    //     // console.log('Center: ' + map.getBounds());
-    //     // console.log('Center: ' + map.getCenter().toString() + ', Bounds: ' + bounds.toString());
-    //     $('#center').html(`Center:  ${map.getCenter().toString()} </br> Bounds: ${bounds.toString()} </br> CenterPoint:  ${map.getCenterPoint()}`);
-    // }); 
-
-
-    // /**
-    //  * idle Event
-    //  * */
-    // naver.maps.Event.addListener(map, 'idle', function() {
-    //     // 화면에 보이지 않는 marker숨김처리
-    //     // marker가 많으면 속도가 많이 느려짐...(대충 600건이상인 경우)
-    //     handleCompanyMarker(map, marker_companys);
-    // });
 
     function handleCompanyMarker(map, markers) {
         var mapBounds = map.getBounds();
@@ -210,50 +184,14 @@ zoom : <div id='zoom'>???</div>
     } ;
 
 
-    const showMakterCluster = () => {
+    const showMarkterCluster = () => {
         markerClustering = createMakterCluster();
         markerClustering.setMap(map);
     };
-    const hideMakterCluster = () => {
+    const hideMarkterCluster = () => {
         if(!markerClustering) return;
         markerClustering.setMap(null);
     };
-
-    
-    /**
-     * ployline 주위의 marker 보여주기
-     const showPolylineBoundMarker = () => {
-         //  const testVisiableMarker() {
-             let paths = polyline.getPath();
-             if(!paths) {
-            return;
-        }
-        
-        let markers = marker_companys.slice();
-        let showMarker = {}
-        for(let path of paths.getArray()) {
-            for(let marker of markers) {
-                // 적용된건은 skip처리
-                if(showMarker[marker._nmarker_id]) {
-                    continue;
-                }
-
-                // 거리계산
-                let distince = map.getProjection().getDistance(path, marker.getPosition());   // 단위 meter 
-                if(distince <= 3000 )   {   // 3km이내
-                    marker.setVisible(true);
-                    
-                    // 활성화 marker
-                    showMarker[marker._nmarker_id] = marker;
-                }
-                else {
-                    marker.setVisible(false);
-                }
-            }
-        }
-    }
-       */
-
 
     /**
      * ployline 주위의 marker 보여주며 clustering 처리
@@ -293,7 +231,8 @@ zoom : <div id='zoom'>???</div>
 
                 // 거리계산
                 let distince = map.getProjection().getDistance(path, marker.getPosition());   // 단위 meter 
-                if(distince <= 3000 )   {   // 3km이내
+                let radius = 10000 * 0.5;        // 10km이내(반경1.5km)
+                if(distince <= radius)   {   
                     // // flag append
                     // showMarkers[marker._nmarker_id] = marker;
                     
@@ -411,14 +350,14 @@ zoom : <div id='zoom'>???</div>
                 // marker info window
                 infoWindow = new naver.maps.InfoWindow({
                     content: [
-                                '<div class="iw_inner">',
-                                '   <h3>XXX회사 순번 ['+ index +']</h3>',
-                                '   <p>서울특별시 중구 태평로1가 31 | 서울특별시 중구 세종대로 110 서울특별시청<br />',
-                                '       02-120 | 공공,사회기관 &gt; 특별,광역시청<br />',
-                                '       <a href="http://www.seoul.go.kr" target="_blank">www.seoul.go.kr/</a>',
-                                '       <button id="__btnWaypoint" onclick="addWayPoint('+markerOpt.position._lat+','+markerOpt.position._lng+')">경유지설정</button> </br>',
-                                '   </p>',
-                                '</div>'
+                                `<div class="iw_inner">`,
+                                `   <h3>XXX회사 순번 [${markerOpt.position._lat},${markerOpt.position._lng}]</h3>`,
+                                `   <p>서울특별시 중구 태평로1가 31 | 서울특별시 중구 세종대로 110 서울특별시청<br />`,
+                                `       02-120 | 공공,사회기관 &gt; 특별,광역시청<br />`,
+                                `       <a href="http://www.seoul.go.kr" target="_blank">www.seoul.go.kr/</a>`,
+                                `       <button id="__btnWaypoint" onclick="addWayPoint(${markerOpt.position._lat},${markerOpt.position._lng})">경유지설정</button> </br>`,
+                                `   </p>`,
+                                `</div>`
                             ].join(''),
                     maxWidth: 300,
                     backgroundColor: "#eee",
@@ -497,17 +436,16 @@ zoom : <div id='zoom'>???</div>
      const markerEventHandler = (marker) => {
     //  function markerEventHandler(marker) {
         return function(e)  {
-            // console.log(`call -- ${marker._nmarker_id}`);
             let infoWindow = marker['infoWindow'];
             if(!infoWindow) {
                 return;
             }
     
             if(infoWindow.getMap()) {
-                // infoWindow.close();
                 closeInfoWindow(infoWindow);
             }
             else {
+                console.log(`call -- ${marker._nmarker_id}`);
                 infoWindow.open(map, marker)
             }
         }
@@ -517,7 +455,6 @@ zoom : <div id='zoom'>???</div>
      * InfoWindow close
      * */
     const closeInfoWindow = (infoWindow) => {
-    // function closeInfoWindow(infoWindow) {
         if(!infoWindow) {
             return;
         }
@@ -530,11 +467,19 @@ zoom : <div id='zoom'>???</div>
      * Add WayPoint
      * */
     const addWayPoint = (lat, lng) => {
-    // function addWayPoint(lat, lng) {
-        // polyline visiable 
-        setVisiablePloyline(false);
-        // add waypoint
-        marker_waypoints.push(`${lng},${lat}`);
+        // // polyline visiable 
+        // setVisiablePloyline(false);
+        
+        if(marker_waypoints.length >= 5) {
+            alert('경유지는 최대 5개 지정하실 수 있습니다.')
+            return;
+        }
+
+        let latlng = `${lat},${lng}`;
+        if(marker_waypoints.indexOf(latlng) == -1) {
+            // add waypoint
+            marker_waypoints.push(latlng);
+        }
     }
 
     /**
@@ -542,6 +487,8 @@ zoom : <div id='zoom'>???</div>
      * 출발~도착지 경로를 중심으로 전체보이도록 조절
      */
      const refreshMapCenterZoom = () => {
+        // // 지정한 좌표와 줌 레벨을 사용하는 새로운 위치로 지도를 즉시 이동합니다.
+        // map.updateBy(coord, zoom);
         // 17에서 시작하자
         map.setZoom( 17 );
 
@@ -554,7 +501,9 @@ zoom : <div id='zoom'>???</div>
         while(!map.getBounds().hasLatLng(pointBounds.getMax()) || !map.getBounds().hasLatLng(pointBounds.getMin())) {
         // while(!map.getBounds().hasLatLng(marker_start.getPosition()) || !map.getBounds().hasLatLng(marker_goal.getPosition())) {
             map.setZoom(map.getZoom() - 1); // 축소
-        }        
+        } 
+        // 한번더...
+        map.setZoom(map.getZoom() - 1); // 축소
      }
 
 
@@ -655,7 +604,7 @@ zoom : <div id='zoom'>???</div>
             if(!mapInfoWindow || !mapInfoWindow.getMap()) {
                 return;
             }
-            // 위경동
+            // 위경도
             let latlng = mapInfoWindow.getPosition();
             // marker create
             marker_goal = marker_goal || createMarker(map, {title:'도착', type:'goal', position:latlng});
@@ -673,7 +622,21 @@ zoom : <div id='zoom'>???</div>
         $('#btnWaypoint').unbind("click").bind('click', function(e) {
             e.preventDefault();
             
-            alert('waypoint' );
+            
+            // 위치정보가 없으면 처리하지 않음
+            if(!mapInfoWindow || !mapInfoWindow.getMap()) {
+                return;
+            }
+            // // 위경도
+            // let latlng = mapInfoWindow.getPosition();
+            // // marker create
+            // marker_goal = marker_goal || createMarker(map, {title:'도착', type:'goal', position:latlng});
+            // // marker close (마커이동시 show/hide라 toggle로 발생함)
+            // closeInfoWindow(marker_goal['infoWindow']);
+            // // 위치지정
+            // marker_goal.setPosition(latlng);
+            
+            // marker_waypoints.push();
         });
 
         $('#btnSearch').unbind("click").bind('click', function() {
@@ -712,7 +675,7 @@ zoom : <div id='zoom'>???</div>
 
     // 좌표로 주소조회하기
     function searchCoordinateToAddress(latlng) {
-        closeInfoWindow(mapInfoWindow);
+        //closeInfoWindow(mapInfoWindow);
 
         
         $.ajax({
@@ -848,7 +811,7 @@ zoom : <div id='zoom'>???</div>
         }
 
         if(bool) {
-            showMakterCluster();
+            showMarkterCluster();
         }
         
     }
@@ -862,8 +825,26 @@ zoom : <div id='zoom'>???</div>
             return;
         }
 
-        let waypoints = marker_waypoints.join('|');
         let option = $('#option').val();
+        // let waypoints ='';
+        // let waypoints = marker_waypoints.join('|');
+        
+        let waypoints = marker_waypoints.map((data, index) => {
+                            let baseLatlng = marker_start.getPosition();
+                            let [lat, lng] = data.split(',');
+                            let targetLatlng = new naver.maps.LatLng(lat, lng);
+                            // 기준좌표에서 대상좌표까지의 거리계산
+                            let distince = map.getProjection().getDistance(baseLatlng, targetLatlng);   // 단위 meter 
+                            // return `${distince}:${data}`;
+                            return `${distince}>>${lng},${lat}`;
+                        })
+                        .sort() // 거리로 정렬
+                        .map((data, index) => {
+                            // 거리를 뺀 좌표정보만 반환
+                            return data.split('>>')[1];
+                        })
+                        .join('|');
+
         $.ajax({
             type: 'get',
             dataType:'json',
@@ -884,7 +865,7 @@ zoom : <div id='zoom'>???</div>
                 
                 // 중심지이동
                 // map.setCenter(new naver.maps.LatLng(37.3595953, 127.1053971)); 
-                // 경로그리기
+                // 경로그리기refreshMapCenterZoom
                 polyline.setPath( path_array );
                 
                 // polyline visiable 
@@ -893,6 +874,10 @@ zoom : <div id='zoom'>???</div>
                 // 지도중심지 이동 및 화면확대
                 refreshMapCenterZoom();
 
+
+                // 00CC33 초록 (원할)
+                // FFFF00 노란 (서행)
+                // FF0033 빨간 (정체)
                 let seconds = Math.trunc(( summary_data.duration / (1000) ) % 60);              // 초
                 let minute = Math.trunc(( summary_data.duration / (1000 * 60 )) % 60 ) ;        // 분
                 let hour = Math.trunc((( summary_data.duration / (1000 * 60 * 60)) % 24 )) ;    // 시간
@@ -908,11 +893,12 @@ zoom : <div id='zoom'>???</div>
                 }
 
                 // 시간 : ${Math.trunc( Math.round( summary_data.duration / (1000 * 60)) )}분  </br>
-                hideMakterCluster();
+                // hideMarkterCluster();
                 // 근처회사 marker
                 showPolylineBoundMarker(true);                // duration: 499724 ms
                 // 다시 보여주자
-                showMakterCluster();
+                // showMarkterCluster();
+                
                 $('#navi_result').html(
                     `거리 : ${Math.trunc( summary_data.distance / 1000)}.${Math.trunc( summary_data.distance % 1000 / 10)} KM </br>
                     시간 : ${timestr}  </br>
