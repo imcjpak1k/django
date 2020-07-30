@@ -83,6 +83,10 @@ def driving(request, start, waypoints, goal, option):
     경로탐색(Direction5)
     """
     print("경로탐색")
+    # print("start", start)
+    # print("waypoints", waypoints)
+    # print("waypoints", waypoints if(waypoints) else '')
+    # print("goal", goal)
 
     return JsonResponse(
         http_request(
@@ -91,7 +95,7 @@ def driving(request, start, waypoints, goal, option):
                 'start': start,
                 'goal': goal,
                 'option': option,
-                'waypoints': waypoints if(not waypoints) else '',
+                'waypoints': waypoints if(waypoints) else '',
             },
         )
     )
