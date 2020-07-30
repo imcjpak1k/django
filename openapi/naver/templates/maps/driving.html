@@ -835,10 +835,13 @@ zoom : <div id='zoom'>???</div>
                             let targetLatlng = new naver.maps.LatLng(lat, lng);
                             // 기준좌표에서 대상좌표까지의 거리계산
                             let distince = map.getProjection().getDistance(baseLatlng, targetLatlng);   // 단위 meter 
+                            // 문자열로 sort하기 때문에 고정길이(10자리+n)로 변경
+                            let distinceArr = `0000000000${distince}`.split('');
+                            let distinceStr = distinceArr.splice(distinceArr.length - 10, distinceArr.length);
                             // return `${distince}:${data}`;
-                            return `${distince}>>${lng},${lat}`;
+                            return `${distinceStr}>>${lng},${lat}`;
                         })
-                        .sort() // 거리로 정렬
+                        .sort() // 정렬
                         .map((data, index) => {
                             // 거리를 뺀 좌표정보만 반환
                             return data.split('>>')[1];
