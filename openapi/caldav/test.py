@@ -6,7 +6,7 @@ from caldav.elements import dav, cdav
 # url = 'https://caldav.calendar.naver.com:443'
 url = 'https://caldav.calendar.naver.com'
 username='cinema76'
-password=')windy76'
+password='fdfsfds'
 
  
 
