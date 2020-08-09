@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'naver.apps.NaverConfig',
+    'google.apps.GoogleConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -128,8 +129,12 @@ OPEN_API_AUTHORIZATION = {
     # 네이버
     'NAVER' : {
         'X-NCP-APIGW-API-KEY-ID': 'client id',
-        'X-NCP-APIGW-API-KEY': 'client security key',
+        'X-NCP-APIGW-API-KEY': 'client secret',
     },
+    # Google
+    'GOOGLE' : {
+
+    }
 }
 
 # logging

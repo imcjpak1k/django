@@ -23,6 +23,8 @@ urlpatterns = [
     path('', views.index),
     # naver open api test
     path('naver/', include('naver.urls')),
+    # google open api test
+    path('google/', include('google.urls')),
     # admin
     path('admin/', admin.site.urls),
 ]
