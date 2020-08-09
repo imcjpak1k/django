@@ -534,13 +534,26 @@ Cluster.prototype = {
 	},
 
 	/**
-	 * 클러스터 마커 클릭 시 줌 동작을 수행하지 않도록 합니다.
+	 * 클러스터 마커 클릭 시 줌 동작을 수행하지 않도록 합니다. 
+	 * TODO : CJPAK 변경함.
+	 * 클러스터 객체를 정의한 CALLBACK함수로 전달한다.
 	 */
 	disableClickZoom: function() {
-		if (!this._relation) return;
+		// if (!this._relation) return;
+		// naver.maps.Event.removeListener(this._relation);
+		// this._relation = null;
 
-		naver.maps.Event.removeListener(this._relation);
-		this._relation = null;
+		var map = this._markerClusterer.getMap();
+
+		this._relation = naver.maps.Event.addListener(this._clusterMarker, 'click', naver.maps.Util.bind(function(e) {
+			// options에 지정된 함수로 cluster객체반환
+			// this._clusterMember
+			var exec = this._markerClusterer.getOptions('disableClickFunction');
+			if(typeof(exec) === 'function') {
+				exec.call(this);
+				// exec(this);
+			}
+		}, this));
 	},
 
 	/**
@@ -566,6 +579,10 @@ Cluster.prototype = {
 
 			if (!this._markerClusterer.getDisableClickZoom()) {
 				this.enableClickZoom();
+			}
+			else{
+				// TODO : zoom disable 이벤트 추가...
+				this.disableClickZoom();
 			}
 		}
 
