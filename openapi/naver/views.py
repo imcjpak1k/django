@@ -9,6 +9,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# setting 정보가져오기
+open_api_auth = settings.OPEN_API_AUTHORIZATION
+
 # Create your views here.
 def index(request):   
     logger.debug('naver openpai view index')
@@ -26,17 +29,26 @@ def index(request):
 
 def clustering(request):
     logger.debug('clustering 페이지이동')
-    context = None
+    context = {
+        'client_id' : open_api_auth['NAVER']['client_id']
+    }
+
     return render(request, 'maps/clustering.html', context)
 
 def direction(request):
     logger.debug('direction 페이지이동')
-    context = None
+    context = {
+        'client_id' : open_api_auth['NAVER']['client_id']
+    }
+
     return render(request, 'maps/direction.html', context)
 
 def navi(request):
     logger.debug('navi 페이지이동')
-    context = None
+    context = {
+        'client_id' : open_api_auth['NAVER']['client_id']
+    }
+
     return render(request, 'maps/driving.html', context)
 
 
@@ -44,7 +56,7 @@ def geocode(request, query):
     """
     주소로 지리정보 검색
     """
-    print("주소로 주소정보 조회")
+    logger.debug("주소로 주소정보 조회")
 
     return JsonResponse(
         http_request(
@@ -125,8 +137,6 @@ def http_request(url=None, params=None, method='get', etc_headers=None, **kwargs
     """
     openapi call
     """
-    # setting 정보가져오기
-    open_api_auth = settings.OPEN_API_AUTHORIZATION
     # logger.debug(open_api_auth)
     # logger.debug(open_api_auth['NAVER']['client_id'])
     # logger.debug(open_api_auth['NAVER']['client_secret'])

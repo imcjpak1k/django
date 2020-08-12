@@ -15,3 +15,5 @@
 # 서버실행
 > manage.py runserver 5500
 
+# 서버실행(local_settings.py를 사용하도록 변경)
+> python manage.py runserver 8888 --settings=openapi.settings.local
