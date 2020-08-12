@@ -133,7 +133,7 @@ OPEN_API_AUTHORIZATION = {
     },
     # Google
     'GOOGLE' : {
-
+        'key' : 'api key'
     }
 }
 

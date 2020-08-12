@@ -1,15 +1,13 @@
 from django.shortcuts import render
 from django.http import request, HttpResponse 
 from django.http import JsonResponse
+from django.conf import settings
 # from django.views import generic
 import requests
 import re
 import logging
 
 logger = logging.getLogger(__name__)
-
-from openapi.settings import OPEN_API_AUTHORIZATION
-
 
 # Create your views here.
 def index(request):   
@@ -127,20 +125,18 @@ def http_request(url=None, params=None, method='get', etc_headers=None, **kwargs
     """
     openapi call
     """
-
-    
-    # print("url {url}".format(url=url))
-    # print('method : '+ method)
-    # print(params)
-    # print("X-NCP-APIGW-API-KEY-ID {id}".format(id=OPEN_API_AUTHORIZATION['NAVER']['X-NCP-APIGW-API-KEY-ID']))
-    # print("X-NCP-APIGW-API-KEY {key}".format(key=OPEN_API_AUTHORIZATION['NAVER']['X-NCP-APIGW-API-KEY']))
+    # setting 정보가져오기
+    open_api_auth = settings.OPEN_API_AUTHORIZATION
+    # logger.debug(open_api_auth)
+    # logger.debug(open_api_auth['NAVER']['client_id'])
+    # logger.debug(open_api_auth['NAVER']['client_secret'])
 
     if(not url): return {}
     
     # headers
     headers = {
-        'X-NCP-APIGW-API-KEY-ID': OPEN_API_AUTHORIZATION['NAVER']['X-NCP-APIGW-API-KEY-ID'],
-        'X-NCP-APIGW-API-KEY':  OPEN_API_AUTHORIZATION['NAVER']['X-NCP-APIGW-API-KEY'],
+        'X-NCP-APIGW-API-KEY-ID': open_api_auth['NAVER']['client_id'],
+        'X-NCP-APIGW-API-KEY':  open_api_auth['NAVER']['client_secret'],
     }
 
     # 기타해드값 추가 
@@ -160,8 +156,12 @@ def http_request(url=None, params=None, method='get', etc_headers=None, **kwargs
     if(status_code != requests.codes.ok): return {}
 
     content_type = response.headers['Content-Type']
-    print('content_type {content_type}'.format(content_type=content_type))
+    
+    logger.debug('content_type {content_type}'.format(content_type=content_type))
 
     regex = re.compile("[^\w]*json[^\w]*")
     # print(regex' if(regex.search(content_type)) else 'contents')
     return response.json() if(regex.search(content_type)) else response.content.decode(encoding)
+
+
+    
