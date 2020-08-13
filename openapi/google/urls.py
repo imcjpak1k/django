@@ -17,8 +17,11 @@ urlpatterns = [
     # path('maps/direction', views.direction, name='direction'),
     # # 경로탐색(marker, direction, clustering)
     # # path('navi', views.Navi.as_view(), name='navi'),
-    # simple map
-    path('maps/simple', views.simple, name='simple'),
+    path('maps', views.maps_index, name='maps_index'),
+    # map simple
+    path('maps/simple', views.maps_simple, name='maps_simple'),
+    # map marker
+    path('maps/marker', views.maps_marker, name='maps_marker'),
     # # 주소로 지리정보 검색
     # path('maps/geocode/<query>', views.geocode, name='geocode'),
     # # 좌표로 지리정보 검색

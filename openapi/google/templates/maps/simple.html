@@ -32,12 +32,22 @@
           center: kkachisan,
           zoom: 12
         });
+
+        // marker
+        // https://developers.google.com/maps/documentation/javascript/adding-a-google-map#map
+        var marker = new google.maps.Marker({
+          map: map,
+          position: kkachisan, 
+          title : '까치산역',
+        });
+
         const coordInfoWindow = new google.maps.InfoWindow();
         coordInfoWindow.setContent(
           createInfoWindowContent(kkachisan, map.getZoom())
         );
         coordInfoWindow.setPosition(kkachisan);
         coordInfoWindow.open(map);
+        
         map.addListener("zoom_changed", () => {
           coordInfoWindow.setContent(
             createInfoWindowContent(kkachisan, map.getZoom())

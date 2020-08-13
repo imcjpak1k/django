@@ -1,0 +1,230 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>marker test</title>
+    <!-- <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script> -->
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key={{key}}&callback=initMap"
+      defer
+    ></script>
+    <style type="text/css">
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+
+      /* Optional: Makes the sample page fill the window. */
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+        #floating-panel {
+            position: absolute;
+            top: 10px;
+            left: 25%;
+            z-index: 5;
+            background-color: #fff;
+            padding: 5px;
+            border: 1px solid #999;
+            text-align: center;
+            font-family: "Roboto", "sans-serif";
+            line-height: 30px;
+            padding-left: 10px;
+        }
+    </style>
+    <script>
+      "use strict";
+      let map;
+      let infowindow;
+      let markers = [];
+      function initMap() {
+        const kkachisan = new google.maps.LatLng(37.531593, 126.846924);
+        map = new google.maps.Map(document.getElementById("map"), {
+          center: kkachisan,
+          zoom: 12
+        });
+
+
+        // infoWindow
+        infowindow = new google.maps.InfoWindow({
+            content: 'contentString',
+            maxWidth: 400,  // maxWidth값을 넘기면 스크롤생성
+        });
+
+
+
+
+        // 선택한 지도의 지역에 마커 표시 및 등록
+        map.addListener("click", event => {
+            let bool = Math.trunc( Math.random() * 10) & 1 === 1; 
+            if(bool) {
+                addMarkerAnimation(event.latLng);
+            }
+            else {
+                addMarker(event.latLng);
+            }
+        }); // Adds a marker at the center of the map.
+
+
+
+
+
+
+        // Adds markers to the map.
+        // Marker sizes are expressed as a Size of X,Y where the origin of the image
+        // (0,0) is located in the top left of the image.
+        // Origins, anchor positions and coordinates of the marker increase in the X
+        // direction to the right and in the Y direction down.
+        const image = {
+          url: "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png",
+          // This marker is 20 pixels wide by 32 pixels high.
+          size: new google.maps.Size(20, 32),
+          // The origin for this image is (0, 0).
+          origin: new google.maps.Point(0, 0),
+          // The anchor for this image is the base of the flagpole at (0, 32).
+          anchor: new google.maps.Point(0, 32)
+        }; // Shapes define the clickable region of the icon. The type defines an HTML
+        // <area> element 'poly' which traces out a polygon as a series of X,Y points.
+        // The final coordinate closes the poly by connecting to the first coordinate.
+
+        const shape = {
+          coords: [1, 1, 1, 20, 18, 20, 18, 1],
+          type: "poly"
+        };
+
+        const kkachisan_complx = new google.maps.LatLng(37.531169, 126.847566);
+        // const image = "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png";
+        const kkachisanMarkerComplx = new google.maps.Marker({
+            map,
+            position: kkachisan_complx,
+            icon: image,
+            shape: shape,
+            title: '복잡한 아이콘'
+        });
+
+
+
+
+
+
+
+        
+        // 마커를 아이콘으로 생성
+        const image2 = "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png";
+        const kkachisanMarker = new google.maps.Marker({
+            map,
+            position: kkachisan,
+            icon: image2,
+            title: '간단한 아이콘'
+        });
+        // marker
+        // https://developers.google.com/maps/documentation/javascript/adding-a-google-map#map
+
+      }
+    
+      // 마커추가 and Event 추가
+      function addMarker(location) {
+        const marker = new google.maps.Marker({
+            position: location,
+            map: map, 
+            title: location.toString(),
+        });
+        
+        // marker click Event
+        marker.addListener("click", ()=>{ 
+            // infowindow
+            infowindow.setContent([
+                    '<div style="padding:10px;min-width:200px;line-height:150%;">',
+                    '<h4">좌표정보 - nomal</h4>',
+                    `<h4 style='color:blue;'>${location.toString()}</h4>`,
+                    '</div>'
+                ].join('\n'));
+            infowindow.open(map, marker);
+        });
+            
+        markers.push(marker);
+      } // Sets the map on all markers in the array.
+      
+
+
+      /** 
+       * 마커가 떨어지면서 생성됨
+       * 마커click하면 toogle로 bounce 애니메이션 효과
+       */
+      function addMarkerAnimation(location, opt) {
+        const marker = new google.maps.Marker({
+            map: map, 
+            position: location,
+            draggable: true,
+            animation: google.maps.Animation.DROP,
+            title: location.toString(),
+        });
+
+        // marker click Event
+        marker.addListener("click", ()=>{ 
+            if (marker.getAnimation() !== null) {
+                marker.setAnimation(null);
+            } 
+            else {
+                marker.setAnimation(google.maps.Animation.BOUNCE);
+            }
+
+            // infowindow
+            infowindow.setContent([
+                    '<div style="padding:10px;min-width:200px;line-height:150%;">',
+                    '<h4">좌표정보 - animation</h4>',
+                    `<h4 style='color:blue;'>${location.toString()}</h4>`,
+                    '</div>'
+                ].join('\n'));
+            infowindow.open(map, marker);
+        });
+
+        
+        markers.push(marker);
+      } // Sets the map on all markers in the array.
+
+
+
+
+
+      // 배열에 있는 모든 마커들에 map객체 적용
+      function setMapOnAll(map) {
+        for(let mark of markers) {
+            mark.setMap(map);
+        }
+      } // Shows any markers currently in the array.
+
+      // 지도에서는 마커를 제거하고 배열에는 보관함
+      function clearMarkers() {
+        setMapOnAll(null);
+      } 
+
+      // 배열에 있는 모든 마커들을 지도에 표시
+      function showMarkers() {
+        setMapOnAll(map);
+      }  
+
+      // 지도에 있는 마커 삭제 및 배열에서 제거
+      function deleteMarkers() {
+        clearMarkers();
+        markers = [];
+      }
+    </script>
+  </head>
+  <body>
+      
+    <div id="floating-panel">
+        <input onclick="clearMarkers();" type="button" value="Hide Markers" />
+        <input onclick="showMarkers();" type="button" value="Show All Markers" />
+        <input onclick="deleteMarkers();" type="button" value="Delete Markers" />
+      </div>
+    <div id="map"></div>
+    
+  </body>
+</html>
+<!-- https://developers.google.com/maps/documentation/javascript/examples/map-simple?hl=ko -->
