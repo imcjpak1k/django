@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # setting 정보가져오기
-open_api_auth = settings.OPEN_API_AUTHORIZATION
+open_api_auth = settings.OPEN_API_AUTHORIZATION['NAVER']
 
 # Create your views here.
 def index(request):   
@@ -30,7 +30,7 @@ def index(request):
 def clustering(request):
     logger.debug('clustering 페이지이동')
     context = {
-        'client_id' : open_api_auth['NAVER']['client_id']
+        'client_id' : open_api_auth['client_id']
     }
 
     return render(request, 'maps/clustering.html', context)
@@ -38,7 +38,7 @@ def clustering(request):
 def direction(request):
     logger.debug('direction 페이지이동')
     context = {
-        'client_id' : open_api_auth['NAVER']['client_id']
+        'client_id' : open_api_auth['client_id']
     }
 
     return render(request, 'maps/direction.html', context)
@@ -46,7 +46,7 @@ def direction(request):
 def navi(request):
     logger.debug('navi 페이지이동')
     context = {
-        'client_id' : open_api_auth['NAVER']['client_id']
+        'client_id' : open_api_auth['client_id']
     }
 
     return render(request, 'maps/driving.html', context)
@@ -138,15 +138,15 @@ def http_request(url=None, params=None, method='get', etc_headers=None, **kwargs
     openapi call
     """
     # logger.debug(open_api_auth)
-    # logger.debug(open_api_auth['NAVER']['client_id'])
-    # logger.debug(open_api_auth['NAVER']['client_secret'])
+    # logger.debug(open_api_auth['client_id'])
+    # logger.debug(open_api_auth['client_secret'])
 
     if(not url): return {}
     
     # headers
     headers = {
-        'X-NCP-APIGW-API-KEY-ID': open_api_auth['NAVER']['client_id'],
-        'X-NCP-APIGW-API-KEY':  open_api_auth['NAVER']['client_secret'],
+        'X-NCP-APIGW-API-KEY-ID': open_api_auth['client_id'],
+        'X-NCP-APIGW-API-KEY':  open_api_auth['client_secret'],
     }
 
     # 기타해드값 추가 

@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 # setting 정보가져오기
-open_api_auth = settings.OPEN_API_AUTHORIZATION
+open_api_auth = settings.OPEN_API_AUTHORIZATION['GOOGLE']
 
 # Create your views here.
 def index(request):   
@@ -24,7 +24,7 @@ def maps_index(request):
 def maps_simple(request):   
     logger.debug('google openpai maps_simple')
     context = {
-        'key' : open_api_auth['GOOGLE']['key']
+        'key' : open_api_auth['key']
     }
 
     return render(request, 'maps/simple.html', context)
@@ -32,7 +32,7 @@ def maps_simple(request):
 def maps_marker(request):   
     logger.debug('google openpai maps_marker')
     context = {
-        'key' : open_api_auth['GOOGLE']['key']
+        'key' : open_api_auth['key']
     }
     
     return render(request, 'maps/marker.html', context)
