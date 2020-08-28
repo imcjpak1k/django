@@ -103,6 +103,8 @@ zoom : <div id='zoom'>???</div>
     let marker_companys = [];
     // 경유지 marker
     let marker_waypoints = [];
+    // 경로탐색
+    let driving_paths = [];
 
 
     function handleCompanyMarker(map, markers) {
@@ -477,7 +479,6 @@ zoom : <div id='zoom'>???</div>
     }
     /**
      * Add WayPoint
-     * */
     const addWayPoint = (lat, lng) => {
         // // polyline visiable 
         // setVisiablePloyline(false);
@@ -490,7 +491,30 @@ zoom : <div id='zoom'>???</div>
         let latlng = `${lat},${lng}`;
         if(marker_waypoints.indexOf(latlng) == -1) {
             // add waypoint
-            marker_waypoints.push(latlng);
+            marker_waypoints.push(latlng); 
+        }
+    }
+    */
+
+    /**
+     * Add WayPoint
+     * */
+    const addWayPoint = (lat, lng) => {
+        // // polyline visiable 
+        // setVisiablePloyline(false);
+        
+        // 출발지/도착지 2개 + 경유지 5개
+        if(driving_paths.length >= 7) {
+            alert('경유지는 최대 5개 지정하실 수 있습니다.')
+            return;
+        }
+
+        let latlng = new naver.maps.LatLng(lat, lng); 
+        if(driving_paths.indexOf(latlng) == -1) {
+            // goal 
+            let goal = driving_paths.pop();
+            // add waypoint, goal
+            driving_paths.push(latlng, goal);
         }
     }
 
@@ -522,7 +546,6 @@ zoom : <div id='zoom'>???</div>
       * waypoint 자동정렬
       * 출발지에서 제일 가까운 경유지검색 후 
       * 검색결과 경유지에서 가까운 경유지를 검색하는 방법으로 반복함
-      * */
      const waypoint_sort = (baseLatLng, waypoints) => {
         console.log('>>>>', waypoints.length)
         let returnArray = [];
@@ -558,8 +581,50 @@ zoom : <div id='zoom'>???</div>
         }
         return returnArray.concat( waypoint_sort(new naver.maps.LatLng(lat, lng), sortedArray) );
     };
+      * */
 
 
+
+     /**
+      * waypoint 자동정렬
+      * 출발지에서 제일 가까운 경유지검색 후 
+      * 검색결과 경유지에서 가까운 경유지를 검색하는 방법으로 반복함
+      * */
+      const waypoint_sort = (baseLatLng, waypoints) => {
+        console.log('>>>>', waypoints.length)
+        let returnArray = [];
+        if(!waypoints || waypoints.length == 0) {
+            return returnArray;
+        }
+
+        let sortedArray = waypoints.map((targetLatlng, index) => {
+                    // 기준좌표에서 대상좌표까지의 거리계산
+                    let distince = map.getProjection().getDistance(baseLatLng, targetLatlng);   // 단위 meter 
+                    // 문자열로 sort하기 때문에 고정길이(10자리+n)로 변경
+                    let distinceArr = `0000000000${Math.trunc(distince)}`.split('');
+                    let distinceStr = distinceArr.splice(distinceArr.length - 10, distinceArr.length).join('');
+                    console.log(`${distinceStr}>>${targetLatlng._lat},${targetLatlng._lng}`);
+                    // return `${distinceStr}>>${data}`;
+                    return `${distinceStr}>>${targetLatlng._lat},${targetLatlng._lng}`;
+                })
+                .sort() // 정렬
+                .map((data, index) => {
+                    // 거리를 뺀 좌표정보만 반환
+                    let [lat, lng] = data.split('>>')[1].split(',');
+
+                    return new naver.maps.LatLng(lat, lng);
+                });
+        debugger
+        // 추가
+        let latlng = sortedArray.splice(0,1)[0];
+        // let [lat, lng] = latlng.split(',');
+        returnArray.push( `${latlng._lng},${latlng._lat}` );
+
+        if(sortedArray.length == 0) {
+            return returnArray;
+        }
+        return returnArray.concat( waypoint_sort(latlng, sortedArray) );
+    };
 
         
     const initGeocoder = () => {
@@ -638,6 +703,9 @@ zoom : <div id='zoom'>???</div>
             // marker create
             // marker_start = marker_start || createStartMarker(map);
             marker_start = marker_start || createMarker(map, {title:'출발', type:'start', position:latlng});
+            // 출발지추가
+            driving_paths.unshift(latlng); 
+            
             // marker close (마커이동시 show/hide라 toggle로 발생함)
             closeInfoWindow(marker_start['infoWindow']);
             // 위치지정 또는 이동
@@ -660,6 +728,9 @@ zoom : <div id='zoom'>???</div>
             let latlng = mapInfoWindow.getPosition();
             // marker create
             marker_goal = marker_goal || createMarker(map, {title:'도착', type:'goal', position:latlng});
+            // 도착지추가
+            driving_paths.push(latlng);
+
             // marker close (마커이동시 show/hide라 toggle로 발생함)
             closeInfoWindow(marker_goal['infoWindow']);
             // 위치지정
@@ -901,13 +972,18 @@ zoom : <div id='zoom'>???</div>
         //                 .join('|');
         
         // 경유지 정렬
-        let waypoints = waypoint_sort(marker_start.getPosition(), marker_waypoints).join('|');
-
+        //let waypoints = waypoint_sort(marker_start.getPosition(), marker_waypoints).join('|');
+        // driving_paths
+        let waypoints = waypoint_sort(driving_paths[0], driving_paths.slice(1, driving_paths.length-1)).join('|');
+            debugger
+        let start = driving_paths[0];
+        let goal = driving_paths[driving_paths.length-1];
         $.ajax({
             type: 'get',
             dataType:'json',
             contentType : 'application/json; charset=utf-8',
-            url: `/naver/maps/driving/${marker_start.getPosition()._lng},${marker_start.getPosition()._lat}/${waypoints || ' '}/${marker_goal.getPosition()._lng},${marker_goal.getPosition()._lat}/${option}`,
+            // url: `/naver/maps/driving/${marker_start.getPosition()._lng},${marker_start.getPosition()._lat}/${waypoints || ' '}/${marker_goal.getPosition()._lng},${marker_goal.getPosition()._lat}/${option}`,
+            url: `/naver/maps/driving/${start._lng},${start._lat}/${waypoints || ' '}/${marker_goal.getPosition()._lng},${marker_goal.getPosition()._lat}/${option}`,
             success:function(data) {
                 // 결과메세지 입력
                 $('#message').html( data.message );

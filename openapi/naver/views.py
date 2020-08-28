@@ -140,6 +140,8 @@ def http_request(url=None, params=None, method='get', etc_headers=None, **kwargs
     # logger.debug(open_api_auth)
     # logger.debug(open_api_auth['client_id'])
     # logger.debug(open_api_auth['client_secret'])
+    logger.debug('url {url}'.format(url=url))
+    logger.debug(params)
 
     if(not url): return {}
     
@@ -167,10 +169,9 @@ def http_request(url=None, params=None, method='get', etc_headers=None, **kwargs
 
     content_type = response.headers['Content-Type']
     
-    logger.debug('content_type {content_type}'.format(content_type=content_type))
-
     regex = re.compile("[^\w]*json[^\w]*")
     # print(regex' if(regex.search(content_type)) else 'contents')
+    logger.debug(response.json() if(regex.search(content_type)) else response.content.decode(encoding))
     return response.json() if(regex.search(content_type)) else response.content.decode(encoding)
 
 
