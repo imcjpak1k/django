@@ -83,6 +83,7 @@ zoom : <div id='zoom'>???</div>
         strokeWeight: 6,
     });
     
+
     // 위치정보
     let mapInfoWindow = new naver.maps.InfoWindow({
         content: '',
@@ -105,7 +106,8 @@ zoom : <div id='zoom'>???</div>
     let marker_waypoints = [];
     // 경로탐색
     let driving_paths = [];
-
+    // 선택마커
+    let selectedMarker = undefined;
 
     function handleCompanyMarker(map, markers) {
         var mapBounds = map.getBounds();
@@ -125,10 +127,12 @@ zoom : <div id='zoom'>???</div>
     function showMarker(map, marker) {
         if (marker.setMap()) return;
         marker.setMap(map);
+        marker.setVisible(true);
     }
     function hideMarker(map, marker) {
         if (!marker.setMap()) return;
         marker.setMap(null);
+        marker.setVisible(fals);
     }
     function setVisiablePloyline(b) {
         polyline.setVisible(b);
@@ -136,7 +140,7 @@ zoom : <div id='zoom'>???</div>
 
 
 
-    const createMakterCluster = () => {
+    const createMarkerCluster = () => {
         if(markerClustering) {
             return markerClustering;
         }
@@ -174,6 +178,7 @@ zoom : <div id='zoom'>???</div>
                 markers: marker_companys,
                 disableClickZoom: true,
                 disableClickFunction : function() {
+                    debugger
                     console.log('disableClickFunction call.....');
                     // this === cluster
                     for(let _marker of this._clusterMember) {
@@ -199,7 +204,7 @@ zoom : <div id='zoom'>???</div>
 
 
     const showMarkterCluster = () => {
-        markerClustering = createMakterCluster();
+        markerClustering = createMarkerCluster();
         markerClustering.setMap(map);
     };
     const hideMarkterCluster = () => {
@@ -312,6 +317,73 @@ zoom : <div id='zoom'>???</div>
         searchCoordinateToAddress(latlng)
     }
 
+    const initSelectedMarker = () => {
+        console.log('const initSelectedMarker');
+        if(!selectedMarker) {
+            return;
+        }
+
+        let marker = selectedMarker.orgMarker;
+        
+        // clustering marker 변경 및 반영
+        //let clusteringMarkers = markerClustering.markers;
+        let index = marker_companys.indexOf(selectedMarker);
+        if(index != -1) {
+            marker_companys[index] = marker;
+            // clustering marker 적용
+            //markerClustering.markers = clusteringMarkers;
+        }
+
+
+        showMarker(map, marker);
+        //marker.setVisible(true);
+
+        // hide
+        hideMarker(map, selectedMarker);
+        selectedMarker = undefined;
+    };
+
+    const createSelectedMarker = (marker) => {
+        console.log('const createSelectedMarker');
+        if(!marker) {
+            return;
+        }
+        
+        // selectedmarker 초기화
+        initSelectedMarker();
+
+        // hide
+        hideMarker(map, marker);
+        //marker.setVisible(false);
+
+        // marker
+        selectedMarker = new naver.maps.Marker({
+            map: map,
+            title : '선택마커',
+            position: marker.getPosition(),
+            draggable: false,
+            size: new naver.maps.Size(22, 35),
+            zIndex: marker.getZIndex() + 1,
+            icon: {
+                    url: 'https://navermaps.github.io/maps.js.ncp/docs/img/example/pin_default.png', //50, 68 크기의 원본 이미지
+                    size: new naver.maps.Size(22, 35),
+                    scaledSize: new naver.maps.Size(22, 35),
+            }
+        });
+
+        // marker 저장
+        selectedMarker.orgMarker = marker;
+
+        // clustering marker 변경 및 반영
+        // let clusteringMarkers = markerClustering.markers;
+        let index = marker_companys.indexOf(marker);
+        if(index != -1) {
+            marker_companys[index] = selectedMarker;
+            // clustering marker 적용
+            //markerClustering.markers = clusteringMarkers;
+        }
+    };
+
     /**
      * Marker 생성
      */
@@ -334,6 +406,7 @@ zoom : <div id='zoom'>???</div>
                     origin: new naver.maps.Point(0, 0),
                     anchor: new naver.maps.Point(18, 19)
                 }
+                //icon_opt = '<div><img src="https://ssl.pstatic.net/static/maps/m/pin_arrival.png" /></div>';
                 
                 // marker info window
                 infoWindow = new naver.maps.InfoWindow({
@@ -450,6 +523,15 @@ zoom : <div id='zoom'>???</div>
      const markerEventHandler = (marker) => {
     //  function markerEventHandler(marker) {
         return function(e)  {
+            // 선택마커 생성
+            createSelectedMarker(marker);
+            
+            // marker createSelectedMarker
+            // mark이벤트추가
+            //naver.maps.Event.addListener(marker, 'click', markerEventHandler(marker));
+
+
+
             let infoWindow = marker['infoWindow'];
             if(!infoWindow) {
                 return;
@@ -922,7 +1004,11 @@ zoom : <div id='zoom'>???</div>
         let data = accidentDeath.searchResult.accidentDeath;
         for (var i = 0, ii = data.length; i < ii; i++) {
             let spot = data[i];
-            createMarker(map, {type:'company', position: new naver.maps.LatLng(spot.grd_la, spot.grd_lo)});
+            let marker = createMarker(map, {type:'company', position: new naver.maps.LatLng(spot.grd_la, spot.grd_lo)});
+
+            // marker createSelectedMarker
+            // mark이벤트추가
+            //naver.maps.Event.addListener(marker, 'click', markerEventHandler(marker));
             // var spot = data[i],
             //     latlng = new naver.maps.LatLng(spot.grd_la, spot.grd_lo),
             //     marker = new naver.maps.Marker({
@@ -991,6 +1077,7 @@ zoom : <div id='zoom'>???</div>
                     return;
                 }
                 
+                debugger
                 let route_data = data.route.traoptimal || data.route.tracomfort || data.route.trafas;
                 let guide_array = route_data[0].guide;
                 let path_array = route_data[0].path;
@@ -1026,6 +1113,15 @@ zoom : <div id='zoom'>???</div>
                     timestr = `${hour}초 `;
                 }
 
+                let summary_waypoints = [];
+                if(summary_data.waypoints) {
+                    for(let waypoint of summary_data.waypoints){
+                        let minute = Math.trunc(( waypoint.duration / (1000 * 60 )) % 60 ) ;        // 분
+                        let hour = Math.trunc((( waypoint.duration / (1000 * 60 * 60)) % 24 )) ;    // 시간
+                        summary_waypoints.push(` - 거리 : ${Math.trunc( waypoint.distance / 1000)}.${Math.trunc( waypoint.distance % 1000 / 10)} KM, 시간 : ${hour}시간 ${minute}분`);
+                    }
+                }
+
                 // 시간 : ${Math.trunc( Math.round( summary_data.duration / (1000 * 60)) )}분  </br>
                 // hideMarkterCluster();
                 // 근처회사 marker
@@ -1038,6 +1134,7 @@ zoom : <div id='zoom'>???</div>
                     시간 : ${timestr}  </br>
                     주유비 : ${summary_data.fuelPrice}원 </br>
                     택시비 : ${summary_data.taxiFare}원  </br>
+                    경유 : ${summary_waypoints.join('\n')}  </br>
                     `
                 );
                 
