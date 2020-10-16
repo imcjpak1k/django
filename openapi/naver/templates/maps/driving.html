@@ -132,7 +132,7 @@ zoom : <div id='zoom'>???</div>
     function hideMarker(map, marker) {
         if (!marker.setMap()) return;
         marker.setMap(null);
-        marker.setVisible(fals);
+        marker.setVisible(false);
     }
     function setVisiablePloyline(b) {
         polyline.setVisible(b);
@@ -176,7 +176,7 @@ zoom : <div id='zoom'>???</div>
                 maxZoom: 14,
                 map: map,
                 markers: marker_companys,
-                disableClickZoom: true,
+                disableClickZoom: false,
                 disableClickFunction : function() {
                     debugger
                     console.log('disableClickFunction call.....');
@@ -233,7 +233,8 @@ zoom : <div id='zoom'>???</div>
             }  
             else {
                 // 숨김처리
-                marker.setVisible(false);
+                // marker.setVisible(false);
+                hideMarker(marker);
             }
         } // end of for
 
@@ -244,22 +245,20 @@ zoom : <div id='zoom'>???</div>
             let markers = targetMarkers.slice();
             targetMarkers = [];
             for(let marker of markers) {
-                // if(showMarkers[marker._nmarker_id]) {
-                //     continue;
-                // }
-
                 // 거리계산
                 let distince = map.getProjection().getDistance(path, marker.getPosition());   // 단위 meter 
                 let radius = 10000 * 0.5;        // 10km이내(반경1.5km)
                 if(distince <= radius)   {   
                     // // flag append
                     // showMarkers[marker._nmarker_id] = marker;
-                    
-                    marker.setVisible(true);
+
+                    // marker.setVisible(true);
+                    showMarker(marker);                    
                     showMarkers.push(marker);
                 }
                 else {
-                    marker.setVisible(false);
+                    // marker.setVisible(false);
+                    hideMarker(marker);   
                     targetMarkers.push( marker );
                 }
             } // end of for(markers)
@@ -319,27 +318,29 @@ zoom : <div id='zoom'>???</div>
 
     const initSelectedMarker = () => {
         console.log('const initSelectedMarker');
-        if(!selectedMarker) {
+        if(!selectedMarker || !selectedMarker.orgIcon)  {
             return;
         }
 
-        let marker = selectedMarker.orgMarker;
+        // 기본Icon
+        selectedMarker.setIcon( selectedMarker.orgIcon);
+        //let marker = selectedMarker.orgMarker;
         
         // clustering marker 변경 및 반영
         //let clusteringMarkers = markerClustering.markers;
-        let index = marker_companys.indexOf(selectedMarker);
-        if(index != -1) {
-            marker_companys[index] = marker;
-            // clustering marker 적용
-            //markerClustering.markers = clusteringMarkers;
-        }
+        // let index = marker_companys.indexOf(selectedMarker);
+        // if(index != -1) {
+        //     marker_companys[index] = marker;
+        //     // clustering marker 적용
+        //     //markerClustering.markers = clusteringMarkers;
+        // }
 
 
-        showMarker(map, marker);
+        //showMarker(map, marker);
         //marker.setVisible(true);
 
         // hide
-        hideMarker(map, selectedMarker);
+        //hideMarker(map, selectedMarker);
         selectedMarker = undefined;
     };
 
@@ -353,35 +354,43 @@ zoom : <div id='zoom'>???</div>
         initSelectedMarker();
 
         // hide
-        hideMarker(map, marker);
+        // hideMarker(map, marker);
         //marker.setVisible(false);
 
         // marker
-        selectedMarker = new naver.maps.Marker({
-            map: map,
-            title : '선택마커',
-            position: marker.getPosition(),
-            draggable: false,
-            size: new naver.maps.Size(22, 35),
-            zIndex: marker.getZIndex() + 1,
-            icon: {
-                    url: 'https://navermaps.github.io/maps.js.ncp/docs/img/example/pin_default.png', //50, 68 크기의 원본 이미지
-                    size: new naver.maps.Size(22, 35),
-                    scaledSize: new naver.maps.Size(22, 35),
-            }
-        });
+        // selectedMarker = new naver.maps.Marker({
+        //     map: map,
+        //     title : '선택마커',
+        //     position: marker.getPosition(),
+        //     draggable: false,
+        //     //size: new naver.maps.Size(22, 35),
+        //     zIndex: marker.getZIndex() + 1,
+        //     icon: {
+        //             url: 'https://navermaps.github.io/maps.js.ncp/docs/img/example/pin_default.png', //50, 68 크기의 원본 이미지
+        //             size: new naver.maps.Size(22, 35),
+        //             scaledSize: new naver.maps.Size(22, 35),
+        //     }
+        // });
 
-        // marker 저장
-        selectedMarker.orgMarker = marker;
+        // // marker 저장
+        // selectedMarker.orgMarker = marker;
 
         // clustering marker 변경 및 반영
         // let clusteringMarkers = markerClustering.markers;
-        let index = marker_companys.indexOf(marker);
-        if(index != -1) {
-            marker_companys[index] = selectedMarker;
-            // clustering marker 적용
-            //markerClustering.markers = clusteringMarkers;
-        }
+        // let index = marker_companys.indexOf(marker);
+        // if(index != -1) {
+        //     marker_companys[index] = selectedMarker;
+        //     // clustering marker 적용
+        //     //markerClustering.markers = clusteringMarkers;
+        // }
+
+        selectedMarker = marker;
+        selectedMarker.orgIcon = selectedMarker.getIcon();
+        selectedMarker.setIcon( {
+                url: 'https://navermaps.github.io/maps.js.ncp/docs/img/example/pin_default.png', //50, 68 크기의 원본 이미지
+                size: new naver.maps.Size(22, 35),
+                scaledSize: new naver.maps.Size(22, 35),
+        });
     };
 
     /**
@@ -406,7 +415,6 @@ zoom : <div id='zoom'>???</div>
                     origin: new naver.maps.Point(0, 0),
                     anchor: new naver.maps.Point(18, 19)
                 }
-                //icon_opt = '<div><img src="https://ssl.pstatic.net/static/maps/m/pin_arrival.png" /></div>';
                 
                 // marker info window
                 infoWindow = new naver.maps.InfoWindow({
@@ -431,9 +439,10 @@ zoom : <div id='zoom'>???</div>
             case 'company': // 회사표시
                 let index = marker_companys.length;
                 // icon option
-                icon_opt = undefined;
-                // icon_opt = {}
-                
+                icon_opt =  {
+                    url: 'http://static.naver.net/maps/mantle/1x/marker-default.png',
+                };
+
                 // marker info window
                 infoWindow = new naver.maps.InfoWindow({
                     content: [
@@ -458,29 +467,15 @@ zoom : <div id='zoom'>???</div>
                 break;
             default:   // 선택표시
                 // icon option
-                icon_opt = undefined;
+                icon_opt =  {
+                    url: 'http://static.naver.net/maps/mantle/1x/marker-default.png',
+                };
+                
                 
                 // marker info window
                 infoWindow = undefined;
                 break;
         }
-
-        
-        // let marker = new naver.maps.Marker({
-        //     position: new naver.maps.LatLng(37.3613962, 127.1112487),
-        //     map: null,
-        //     title: '출발',
-        //     icon: {
-        //         content: [
-        //             '<div style="background-color:red;">',
-        //                 '출발',
-        //             '</div>'
-        //         ].join(''),
-        //         size: new naver.maps.Size(38, 58),
-        //         anchor: new naver.maps.Point(19, 58),
-        //     },
-        //     draggable: true
-        // });
 
         // marker
         let marker = new naver.maps.Marker({
@@ -523,15 +518,10 @@ zoom : <div id='zoom'>???</div>
      const markerEventHandler = (marker) => {
     //  function markerEventHandler(marker) {
         return function(e)  {
+            debugger
             // 선택마커 생성
             createSelectedMarker(marker);
             
-            // marker createSelectedMarker
-            // mark이벤트추가
-            //naver.maps.Event.addListener(marker, 'click', markerEventHandler(marker));
-
-
-
             let infoWindow = marker['infoWindow'];
             if(!infoWindow) {
                 return;
